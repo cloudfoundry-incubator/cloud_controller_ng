@@ -81,7 +81,7 @@ module VCAP::CloudController
 
     def create_service_bindings(services, app)
       action = ServiceBindingCreate.new(@user_audit_info)
-      services.each do |name|
+      service_bindings = services.collect do |name|
         service_instance = ServiceInstance.find(name: name)
         service_instance_not_found!(name) unless service_instance
         next if binding_exists?(service_instance, app)
@@ -91,9 +91,11 @@ module VCAP::CloudController
           service_instance,
           ServiceBindingCreateMessage.new(type: SERVICE_BINDING_TYPE),
           volume_services_enabled?,
-          false
+          true
         )
       end
+
+      sleep 5 while service_bindings.any?(&:operation_in_progress?)
     end
 
     def binding_exists?(service_instance, app)
