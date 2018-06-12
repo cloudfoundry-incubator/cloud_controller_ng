@@ -3342,12 +3342,13 @@ module VCAP::CloudController
       let(:developer) { make_developer_for_space(space) }
       let(:service_instance) { ManagedServiceInstance.make(:routing, space: space) }
       let(:route) { VCAP::CloudController::Route.make(space: space) }
-      let(:opts) { {} }
+      let(:bind_body) { { 'route_service_url' => 'https://foo.route-service.com' } }
+      let(:opts) { { body: bind_body.to_json } }
       let(:service_binding_url_pattern) { %r{/v2/service_instances/#{service_instance.guid}/service_bindings/} }
 
       before do
-        stub_bind(service_instance, opts)
         TestConfig.config['route_services_enabled'] = true
+        stub_bind(service_instance, opts)
         set_current_user(developer)
       end
 

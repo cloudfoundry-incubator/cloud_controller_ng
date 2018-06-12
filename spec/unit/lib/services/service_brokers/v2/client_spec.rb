@@ -1027,15 +1027,42 @@ module VCAP::Services::ServiceBrokers::V2
       end
 
       context 'when the binding does not have an app_guid' do
-        let(:binding) { VCAP::CloudController::RouteBinding.make }
+        let(:route) { VCAP::CloudController::Route.make(space: instance.space) }
+        let(:binding) { VCAP::CloudController::RouteBinding.new(
+          service_instance: instance,
+          route: route
+        )}
 
         it 'does not send the app_guid in the request' do
           client.bind(binding, arbitrary_parameters)
 
           expect(http_client).to have_received(:put).
             with(anything,
-              hash_excluding(:app_guid)
+            plan_id:       binding.service_plan.broker_provided_id,
+            service_id:    binding.service.broker_provided_id,
+            bind_resource: binding.required_parameters,
+            context:       {
+              platform:          'cloudfoundry',
+              organization_guid: instance.organization.guid,
+              space_guid:        instance.space_guid
+            }
             )
+        end
+
+        it 'does send the routable address in the request' do
+          client.bind(binding, arbitrary_parameters)
+
+        expect(http_client).to have_received(:put).
+          with(anything,
+            plan_id:       binding.service_plan.broker_provided_id,
+            service_id:    binding.service.broker_provided_id,
+            bind_resource: binding.required_parameters,
+            context:       {
+              platform:          'cloudfoundry',
+              organization_guid: instance.organization.guid,
+              space_guid:        instance.space_guid
+            }
+          )
         end
       end
 

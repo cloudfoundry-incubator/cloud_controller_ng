@@ -352,10 +352,20 @@ module VCAP::CloudController
     def bind_route(route_guid, instance_guid)
       logger.debug 'cc.association.add', model: self.class.model_class_name, guid: instance_guid, assocation: :routes, other_guid: route_guid
 
-      arbitrary_parameters = @request_attrs['parameters']
+      arbitrary_parameters = OpenStruct.new(:parameters => @request_attrs['parameters'])
 
-      binding_manager = ServiceInstanceBindingManager.new(self, logger)
-      route_binding = binding_manager.create_route_service_instance_binding(route_guid, instance_guid, arbitrary_parameters, route_services_enabled?)
+      # binding_manager = ServiceInstanceBindingManager.new(self, logger)
+      route = Route.find(guid: route_guid)
+      raise RouteNotFound unless route
+
+      instance = ServiceInstance.find(guid: instance_guid)
+      raise ServiceInstanceNotFound unless instance
+      raise ServiceInstanceBindingManager::RouteServiceDisabled if instance.route_service? && !route_services_enabled?
+      #THis may need to use service_instance.space.guid ;)
+      raise CloudController::Errors::ApiError.new_from_details('NotAuthorized') unless Permissions.new(SecurityContext.current_user).can_write_to_space?(instance.space_guid)
+
+      binding_creator = ServiceBindingCreate.new(UserAuditInfo.from_context(SecurityContext))
+      route_binding = binding_creator.create(route, instance, arbitrary_parameters, nil, nil)
 
       [HTTP::CREATED, object_renderer.render_json(self.class, route_binding.service_instance, @opts)]
     rescue ServiceInstanceBindingManager::ServiceInstanceNotBindable
