@@ -156,9 +156,12 @@ module VCAP::CloudController
     end
 
     describe 'create' do
-      let(:instance) { ManagedServiceInstance.make }
+      let(:broker) { ServiceBroker.make }
+      let(:service) { Service.make(bindings_retrievable: false, service_broker: broker) }
+      let(:service_plan) { ServicePlan.make(service: service) }
+      let(:instance) { ManagedServiceInstance.make(service_plan: service_plan) }
+
       let(:space) { instance.space }
-      let(:service) { instance.service }
       let(:developer) { make_developer_for_space(space) }
       let(:name) { 'fake-service-key' }
       let(:service_instance_guid) { instance.guid }
@@ -414,6 +417,123 @@ module VCAP::CloudController
             end
           end
         end
+
+        describe 'asynchronous key creation' do
+          context 'when accepts_incomplete is true' do
+            before do
+              post '/v2/service_keys?accepts_incomplete=true', req
+            end
+
+            context 'when bindings_retrievable is true' do
+              let(:service) { Service.make(bindings_retrievable: true, service_broker: broker) }
+
+              context 'and the broker returns asynchronously' do
+                let(:bind_status) { 202 }
+                let(:bind_body) { {} }
+
+                it 'returns a 202 status code' do
+                  expect(last_response).to have_status_code(202)
+                end
+
+                it 'saves the key in the model' do
+                  key = ServiceKey.last
+                  expect(key.last_operation.state).to eql('in progress')
+                end
+
+                it 'returns an in progress service key response' do
+                  expect(decoded_response['entity']['last_operation']['type']).to eq('create')
+                  expect(decoded_response['entity']['last_operation']['state']).to eq('in progress')
+                end
+
+                it 'returns a location header' do
+                  expect(last_response.headers['Location']).to match(%r{^/v2/service_keys/[[:alnum:]-]+$})
+                end
+
+                context 'when the service broker returns operation state' do
+                  let(:bind_body) { { operation: '123' } }
+
+                  it 'persists the operation state' do
+                    key = ServiceKey.last
+                    expect(key.last_operation.broker_provided_operation).to eq('123')
+                  end
+                end
+
+              end
+
+              context 'and the broker is synchronous' do
+                let(:bind_status) { 201 }
+
+                it 'returns a 201 status code' do
+                  expect(last_response).to have_status_code(201)
+                end
+              end
+            end
+
+            context 'when bindings_retrievable is false' do
+              let(:service) { Service.make(bindings_retrievable: false) }
+
+              context 'and the broker returns asynchronously' do
+                let(:bind_status) { 202 }
+                let(:bind_body) { {} }
+
+                it 'should throw invalid service key error' do
+                  expect(last_response).to have_status_code(400)
+                  expect(decoded_response['error_code']).to eq 'CF-ServiceKeyInvalid'
+                  expect(decoded_response['description']).to match('Could not create asynchronous key')
+                end
+              end
+
+              context 'and the broker is synchronous' do
+                let(:bind_status) { 201 }
+
+                it 'returns a 201 status code' do
+                  expect(last_response).to have_status_code(201)
+                end
+              end
+            end
+          end
+
+          context 'when accepts_incomplete is false' do
+            it 'returns a 201 status code' do
+              post '/v2/service_keys?accepts_incomplete=false', req
+              expect(last_response).to have_status_code(201)
+            end
+
+            context 'and the broker only supports asynchronous request' do
+              let(:bind_status) { 422 }
+              let(:bind_body) { { error: 'AsyncRequired' } }
+
+              it 'returns a 400 status code' do
+                post '/v2/service_keys?accepts_incomplete=false', req
+                expect(last_response).to have_status_code(400)
+                expect(decoded_response['error_code']).to eq 'CF-AsyncRequired'
+              end
+            end
+          end
+
+          context 'when accepts_incomplete is not set' do
+            context 'and the broker only supports asynchronous request' do
+              let(:bind_status) { 422 }
+              let(:bind_body) { { error: 'AsyncRequired' } }
+
+              it 'returns a 400 status code' do
+                post '/v2/service_keys', req
+                expect(last_response).to have_status_code(400)
+                expect(decoded_response['error_code']).to eq 'CF-AsyncRequired'
+              end
+            end
+          end
+
+          context 'when accepts_incomplete is not a bool' do
+            it 'returns a 400 status code' do
+              post '/v2/service_keys?accepts_incomplete=not_a_bool', req
+              expect(last_response).to have_status_code(400)
+
+              expect(a_request(:put, %r{#{broker_url(broker)}/v2/service_instances/#{guid_pattern}/service_bindings/#{guid_pattern}})).
+                to_not have_been_made
+            end
+          end
+        end
       end
 
       context 'for a user-provided service instance' do
@@ -644,7 +764,118 @@ module VCAP::CloudController
         expect(event.organization_guid).to eq(service_key.space.organization.guid)
         expect(event.metadata).to include({ 'request' => {} })
       end
+
+      describe 'asynchronous key deletion' do
+        context 'when accepts_incomplete is true' do
+          context 'when the broker responds asynchronously' do
+            let(:unbind_status) { 202 }
+
+            it 'returns a 202 status code' do
+              delete "/v2/service_keys/#{service_key.guid}?accepts_incomplete=true"
+              expect(last_response).to have_status_code(202)
+            end
+
+            it 'passess accepts_incomplete flag to the broker' do
+              delete "/v2/service_keys/#{service_key.guid}?accepts_incomplete=true"
+              expect(a_request(:delete, unbind_url(service_key, accepts_incomplete: true))).to have_been_made
+            end
+
+            it 'updates the service key operation in the model' do
+              delete "/v2/service_keys/#{service_key.guid}?accepts_incomplete=true"
+
+              service_key.reload
+
+              expect(service_key.last_operation.type).to eql('delete')
+              expect(service_key.last_operation.state).to eql('in progress')
+            end
+
+            it 'indicates the service key is being deleted' do
+              delete "/v2/service_keys/#{service_key.guid}?accepts_incomplete=true"
+
+              expect(last_response.headers['Location']).to eq "/v2/service_keys/#{service_key.guid}"
+
+              expect(decoded_response['entity']['last_operation']).to be
+              expect(decoded_response['entity']['last_operation']['type']).to eq('delete')
+              expect(decoded_response['entity']['last_operation']['state']).to eq('in progress')
+            end
+          end
+
+          context 'when the broker responds synchronously' do
+            let(:unbind_status) { 200 }
+            let(:unbind_body) { {} }
+
+            it 'returns 204 status code' do
+              delete "/v2/service_keys/#{service_key.guid}?accepts_incomplete=true"
+
+              expect(last_response).to have_status_code(204)
+            end
+          end
+        end
+
+        context 'when accepts_incomplete is false' do
+          it 'returns a 204 status code' do
+            delete "/v2/service_keys/#{service_key.guid}?accepts_incomplete=false"
+            expect(last_response).to have_status_code(204)
+          end
+
+          context 'when the broker responds asynchronously' do
+            let(:unbind_status) { 202 }
+            let(:params_warning) do
+              CGI.escape(['The service broker responded asynchronously to the unbind request, but the accepts_incomplete query parameter was false or not given.',
+                          'The service key may not have been successfully deleted on the service broker.'].join(' '))
+            end
+
+            it 'returns a 204 status code' do
+              delete "/v2/service_keys/#{service_key.guid}?accepts_incomplete=false"
+
+              expect(last_response).to have_status_code(204)
+            end
+
+            it 'should warn the user about the misbehave broker' do
+              delete "/v2/service_keys/#{service_key.guid}?accepts_incomplete=false"
+
+              expect(last_response.headers).to include('X-Cf-Warnings')
+              expect(last_response.headers['X-Cf-Warnings']).to include(params_warning)
+            end
+          end
+
+          context 'and the broker only supports asynchronous request' do
+            let(:unbind_status) { 422 }
+            let(:unbind_body) { { error: 'AsyncRequired' } }
+
+            it 'returns a 400 status code' do
+              delete "/v2/service_keys/#{service_key.guid}?accepts_incomplete=false"
+              expect(last_response).to have_status_code(400)
+              expect(decoded_response['error_code']).to eq 'CF-AsyncRequired'
+            end
+          end
+        end
+
+        context 'and when accepts_incomplete is not set' do
+          context 'and when the broker only supports asynchronous request' do
+            let(:unbind_status) { 422 }
+            let(:unbind_body) { { error: 'AsyncRequired' } }
+
+            it 'returns a 400 status code' do
+              delete "/v2/service_keys/#{service_key.guid}"
+              expect(last_response).to have_status_code(400)
+              expect(decoded_response['error_code']).to eq 'CF-AsyncRequired'
+            end
+          end
+        end
+
+        context 'and when the parameter is not a bool' do
+          it 'returns a 400 status code' do
+            delete "/v2/service_keys/#{service_key.guid}?accepts_incomplete=not_a_bool"
+            expect(last_response).to have_status_code(400)
+
+            expect(a_request(:delete, %r{#{broker_url(broker)}/v2/service_instances/#{guid_pattern}/service_keys/#{guid_pattern}})).
+              to_not have_been_made
+          end
+        end
+      end
     end
+
     describe 'GET', '/v2/service_keys/:service_key_guid/parameters' do
       let(:space) { Space.make }
       let(:developer) { make_developer_for_space(space) }

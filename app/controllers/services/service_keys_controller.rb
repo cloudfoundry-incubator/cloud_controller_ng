@@ -29,6 +29,8 @@ module VCAP::CloudController
 
     post path, :create
     def create
+      accepts_incomplete = convert_flag_to_bool(params['accepts_incomplete'])
+
       @request_attrs = self.class::CreateMessage.decode(body).extract(stringify_keys: true)
       logger.debug 'cc.create', model: self.class.model_class_name, attributes: request_attrs
       raise InvalidRequest unless request_attrs
