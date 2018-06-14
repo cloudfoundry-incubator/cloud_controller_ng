@@ -25,10 +25,46 @@ module CloudController::Presenters::V2
             'name' => service_key.name,
             'service_instance_guid' => service_key.service_instance_guid,
             'credentials' => service_key.credentials,
+            'last_operation' => {
+              'state' => 'succeeded',
+              'type' => 'create',
+              'description' => '',
+              'updated_at'  => service_key.updated_at,
+              'created_at'  => service_key.created_at,
+            },
             'some_relation_url' => 'http://example.com',
             'service_key_parameters_url' => "/v2/service_keys/#{service_key.guid}/parameters",
           }
         )
+      end
+
+      context 'when the service key has an operation' do
+        let(:operation) { VCAP::CloudController::ServiceKeyOperation.new(type: 'delete', state: 'in progress', description: 'in progress..') }
+
+        before do
+          service_key.last_operation = operation
+        end
+
+        it 'returns the service key last operation data in the entity' do
+          set_current_user_as_admin
+
+          expect(presenter.entity_hash(controller, service_key, opts, depth, parents, orphans)).to eq(
+            {
+              'name' => service_key.name,
+              'service_instance_guid' => service_key.service_instance_guid,
+              'credentials' => service_key.credentials,
+              'last_operation' => {
+                'state' => 'in progress',
+                'type' => 'delete',
+                'description' => 'in progress..',
+                'updated_at'  => operation.updated_at,
+                'created_at'  => operation.created_at,
+              },
+              'some_relation_url' => 'http://example.com',
+              'service_key_parameters_url' => "/v2/service_keys/#{service_key.guid}/parameters",
+            }
+          )
+        end
       end
 
       context 'credentials' do

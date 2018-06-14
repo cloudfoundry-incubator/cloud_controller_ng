@@ -3,6 +3,7 @@ module VCAP::CloudController
     class InvalidAppAndServiceRelation < StandardError; end
 
     one_to_one :service_key_operation
+    alias_attribute :last_operation, :service_key_operation
 
     many_to_one :service_instance
 

@@ -37,6 +37,13 @@ RSpec.describe 'ServiceKeys' do
                 'service_instance_guid' => service_key1.service_instance.guid,
                 'credentials' => { 'secret' => 'key' },
                 'name' => service_key1.name,
+                'last_operation' => {
+                  'type' => 'create',
+                  'state' => 'succeeded',
+                  'description' => '',
+                  'updated_at' => iso8601,
+                  'created_at' => iso8601,
+                },
                 'service_instance_url' => "/v2/service_instances/#{service_key1.service_instance.guid}",
                 'service_key_parameters_url' => "/v2/service_keys/#{service_key1.guid}/parameters",
               }
@@ -52,6 +59,13 @@ RSpec.describe 'ServiceKeys' do
                 'service_instance_guid' => service_key2.service_instance.guid,
                 'credentials' => { 'secret' => 'key' },
                 'name' => service_key2.name,
+                'last_operation' => {
+                  'type' => 'create',
+                  'state' => 'succeeded',
+                  'description' => '',
+                  'updated_at' => iso8601,
+                  'created_at' => iso8601,
+                },
                 'service_instance_url' => "/v2/service_instances/#{service_key2.service_instance.guid}",
                 'service_key_parameters_url' => "/v2/service_keys/#{service_key2.guid}/parameters",
               }
@@ -83,6 +97,13 @@ RSpec.describe 'ServiceKeys' do
             'service_instance_guid' => service_instance.guid,
             'credentials' => { 'secret' => 'key' },
             'name' => 'key',
+            'last_operation' => {
+              'type' => 'create',
+              'state' => 'succeeded',
+              'description' => '',
+              'updated_at' => iso8601,
+              'created_at' => iso8601,
+            },
             'service_instance_url' => "/v2/service_instances/#{service_instance.guid}",
             'service_key_parameters_url' => "/v2/service_keys/#{service_key1.guid}/parameters"
           }
