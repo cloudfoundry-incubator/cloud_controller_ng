@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module VCAP::CloudController
-  RSpec.describe ServiceBindingOperation, type: :model do
+  RSpec.describe ServiceKeyOperation, type: :model do
     let(:updated_at_time) { Time.utc(2018, 5, 2, 3, 30, 0) }
     let(:created_at_time) { Time.utc(2018, 5, 2, 3, 30, 0) }
     let(:operation_attributes) do
@@ -12,7 +12,7 @@ module VCAP::CloudController
       }
     end
 
-    let(:operation) { ServiceBindingOperation.make(operation_attributes) }
+    let(:operation) { ServiceKeyOperation.make(operation_attributes) }
 
     before do
       operation.this.update(updated_at: updated_at_time, created_at: created_at_time)
@@ -33,7 +33,7 @@ module VCAP::CloudController
     end
 
     describe 'updating attributes' do
-      it 'updates the attributes of the service binding operation' do
+      it 'updates the attributes of the service key operation' do
         new_attributes = {
           state: 'finished',
           description: '100%'

@@ -2,6 +2,8 @@ module VCAP::CloudController
   class ServiceKey < Sequel::Model
     class InvalidAppAndServiceRelation < StandardError; end
 
+    one_to_one :service_key_operation
+
     many_to_one :service_instance
 
     export_attributes :name, :service_instance_guid, :credentials
