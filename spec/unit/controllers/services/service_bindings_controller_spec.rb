@@ -452,16 +452,6 @@ module VCAP::CloudController
                   end
                 end
 
-                context 'when bindings_retrievable is false' do
-                  let(:service) { Service.make(bindings_retrievable: false) }
-
-                  it 'should throw invalid service binding error' do
-                    expect(last_response).to have_status_code(400)
-                    expect(decoded_response['error_code']).to eq 'CF-ServiceBindingInvalid'
-                    expect(decoded_response['description']).to match('Could not create asynchronous binding')
-                  end
-                end
-
                 context 'when attempting to bind and the service binding already exists' do
                   it 'returns a ServiceBindingAppServiceTaken error' do
                     post '/v2/service_bindings?accepts_incomplete=true', req.to_json
@@ -470,6 +460,28 @@ module VCAP::CloudController
                     expect(decoded_response['error_code']).to eq('CF-ServiceBindingAppServiceTaken')
                     expect(decoded_response['description']).to eq('The app is already bound to the service.')
                   end
+                end
+              end
+
+              context 'and the broker is synchronous' do
+                let(:bind_status) { 201 }
+
+                it 'returns a 201 status code' do
+                  expect(last_response).to have_status_code(201)
+                end
+              end
+            end
+
+            context 'when bindings_retrievable is false' do
+              let(:service) { Service.make(bindings_retrievable: false) }
+
+              context 'and the broker returns asynchronously' do
+                let(:bind_status) { 202 }
+
+                it 'should throw invalid service binding error' do
+                  expect(last_response).to have_status_code(400)
+                  expect(decoded_response['error_code']).to eq 'CF-ServiceBindingInvalid'
+                  expect(decoded_response['description']).to match('Could not create asynchronous binding')
                 end
               end
 
