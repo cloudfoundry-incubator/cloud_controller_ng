@@ -821,7 +821,7 @@ module VCAP::Services::ServiceBrokers::V2
 
       it 'sets the credentials on the key' do
         attributes = client.create_service_key(key)
-        key.set(attributes)
+        key.set(attributes[:key])
         key.save
 
         expect(key.credentials).to eq({
@@ -895,6 +895,46 @@ module VCAP::Services::ServiceBrokers::V2
 
               expect(orphan_mitigator).to have_received(:cleanup_failed_key).with(client_attrs, key)
             end
+          end
+        end
+      end
+
+      context 'when the caller provides accepts_incomplete' do
+        context 'when accepts_incomplete=true' do
+          let(:accepts_incomplete) { true }
+
+          it 'make a put request with accepts_incomplete true' do
+            client.create_service_key(key, accepts_incomplete: accepts_incomplete)
+            expect(http_client).to have_received(:put).
+              with(/accepts_incomplete=true/, anything)
+          end
+
+          context 'and when the broker returns asynchronously' do
+            let(:code) { 202 }
+
+            it 'returns async true' do
+              response = client.create_service_key(key, arbitrary_parameters: {}, accepts_incomplete: accepts_incomplete)
+              expect(response[:async]).to eq(true)
+            end
+
+            context 'and when the broker provides operation' do
+              let(:response_data) { { operation: '123' } }
+
+              it 'returns the operation attribute' do
+                response = client.create_service_key(key, arbitrary_parameters: {}, accepts_incomplete: accepts_incomplete)
+                expect(response[:operation]).to eq('123')
+              end
+            end
+          end
+        end
+
+        context 'when accepts_incomplete=false' do
+          let(:accepts_incomplete) { false }
+
+          it 'make a put request without the accepts_incomplete query parameter' do
+            client.create_service_key(key, accepts_incomplete: accepts_incomplete)
+            expect(http_client).to have_received(:put).
+              with(/^((?!accepts_incomplete).)*$/, anything)
           end
         end
       end

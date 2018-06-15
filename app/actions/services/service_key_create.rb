@@ -4,12 +4,14 @@ require 'actions/services/locks/lock_check'
 module VCAP::CloudController
   class ServiceKeyCreate
     include VCAP::CloudController::LockCheck
+    class InvalidServiceKey < StandardError; end
+    class ServiceBrokerInvalidServiceKeyRetrievable < StandardError; end
 
     def initialize(logger)
       @logger = logger
     end
 
-    def create(service_instance, key_attrs, arbitrary_parameters)
+    def create(service_instance, key_attrs, arbitrary_parameters, accepts_incomplete)
       errors = []
 
       begin
@@ -18,10 +20,15 @@ module VCAP::CloudController
         service_key = ServiceKey.new(key_attrs)
 
         client = VCAP::Services::ServiceClientProvider.provide(instance: service_instance)
-        attributes_to_update = client.create_service_key(service_key, arbitrary_parameters: arbitrary_parameters)
+        service_key_result = client.create_service_key(service_key, arbitrary_parameters: arbitrary_parameters, accepts_incomplete: accepts_incomplete)
 
         begin
-          service_key.set(attributes_to_update)
+          service_key.set(service_key_result[:key])
+          if service_key_result[:async]
+            raise ServiceBrokerInvalidServiceKeyRetrievable.new unless service_key.service.bindings_retrievable
+            service_key.save_with_new_operation({ type: 'create', state: 'in progress', broker_provided_operation: service_key_result[:operation] })
+          end
+
           service_key.save
         rescue => e
           @logger.error "Failed to save state of create for service key #{service_key.guid} with exception: #{e}"

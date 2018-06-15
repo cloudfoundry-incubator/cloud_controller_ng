@@ -13,7 +13,7 @@ module VCAP::CloudController
       @logger = logger
     end
 
-    def create_service_key(request_attrs)
+    def create_service_key(request_attrs, accepts_incomplete)
       service_instance = ServiceInstance.first(guid: request_attrs['service_instance_guid'])
       raise ServiceInstanceNotFound unless service_instance
       raise ServiceInstanceNotBindable unless service_instance.bindable?
@@ -24,7 +24,8 @@ module VCAP::CloudController
       service_key, errors = ServiceKeyCreate.new(@logger).create(
         service_instance,
         request_attrs.except('parameters'),
-        request_attrs['parameters']
+        request_attrs['parameters'],
+        accepts_incomplete
       )
 
       if errors.present?

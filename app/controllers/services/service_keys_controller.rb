@@ -35,11 +35,11 @@ module VCAP::CloudController
       logger.debug 'cc.create', model: self.class.model_class_name, attributes: request_attrs
       raise InvalidRequest unless request_attrs
       service_key_manager = ServiceKeyManager.new(@services_event_repository, self, logger)
-      service_key = service_key_manager.create_service_key(@request_attrs)
+      service_key = service_key_manager.create_service_key(@request_attrs, accepts_incomplete)
 
       @services_event_repository.record_service_key_event(:create, service_key)
 
-      [HTTP::CREATED,
+      [status_from_operation_state(service_key.last_operation),
        { 'Location' => "#{self.class.path}/#{service_key.guid}" },
        object_renderer.render_json(self.class, service_key, @opts)
       ]
@@ -51,10 +51,13 @@ module VCAP::CloudController
     rescue ServiceKeyManager::ServiceInstanceUserProvided
       error_message = 'Service keys are not supported for user-provided service instances.'
       raise CloudController::Errors::ApiError.new_from_details('ServiceKeyNotSupported', error_message)
+    rescue ServiceKeyCreate::ServiceBrokerInvalidServiceKeyRetrievable
+      raise CloudController::Errors::ApiError.new_from_details('ServiceKeyInvalid', 'Could not create asynchronous service key when bindings_retrievable is false.')
     end
 
     delete path_guid, :delete
     def delete(guid)
+      accepts_incomplete = convert_flag_to_bool(params['accepts_incomplete'])
       begin
         service_key = find_guid_and_validate_access(:delete, guid, ServiceKey)
       rescue CloudController::Errors::ApiError => e
@@ -106,5 +109,15 @@ module VCAP::CloudController
     end
 
     define_messages
+
+    private
+
+    def status_from_operation_state(last_operation)
+      if last_operation && last_operation.state == 'in progress'
+        HTTP::ACCEPTED
+      else
+        HTTP::CREATED
+      end
+    end
   end
 end

@@ -82,5 +82,21 @@ module VCAP::CloudController
     def operation_in_progress?
       false
     end
+
+    def save_with_new_operation(last_operation)
+      ServiceKey.db.transaction do
+        save_changes
+
+        # if self.last_operation
+        #   self.last_operation.destroy
+        # end
+
+        # it is important to create the service key operation with the service key
+        # insteab of doing self.service_key_operation = x
+        # because mysql will deadlock when requests happen concurrently otherwise.
+        ServiceKeyOperation.create(last_operation.merge(service_key_id: self.id))
+        self.service_key_operation(reload: true)
+      end
+    end
   end
 end

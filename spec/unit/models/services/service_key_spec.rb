@@ -155,5 +155,48 @@ module VCAP::CloudController
         expect(visible_to_other_user.all).to be_empty
       end
     end
+
+    describe '#save_with_new_operation' do
+      let(:service_instance) { ServiceInstance.make }
+      let(:service_key) { ServiceKey.make(service_instance: service_instance) }
+
+      it 'creates a new last_operation object and associates it with the service key' do
+        last_operation = {
+          state: 'in progress',
+          type: 'create',
+          description: '10%'
+        }
+        service_key.save_with_new_operation(last_operation)
+
+        expect(service_key.last_operation.state).to eq 'in progress'
+        expect(service_key.last_operation.description).to eq '10%'
+        expect(service_key.last_operation.type).to eq 'create'
+        expect(ServiceKey.count).to eq(1)
+      end
+
+      # context 'when saving the binding operation fails' do
+      #   before do
+      #     allow(ServiceKeyOperation).to receive(:create).and_raise(Sequel::DatabaseError, 'failed to create new-binding operation')
+      #   end
+      #
+      #   it 'should rollback the serviceKey' do
+      #     expect { service_key.save_with_new_operation({ state: 'will fail' }) }.to raise_error(Sequel::DatabaseError)
+      #     expect(ServiceKey.count).to eq(0)
+      #   end
+      # end
+      #
+      # context 'when called twice' do
+      #   it 'does saves the second operation' do
+      #     service_key.save_with_new_operation({ state: 'in progress', type: 'create', description: 'description' })
+      #     service_key.save_with_new_operation({ state: 'in progress', type: 'delete' })
+      #
+      #     expect(service_key.last_operation.state).to eq 'in progress'
+      #     expect(service_key.last_operation.type).to eq 'delete'
+      #     expect(service_key.last_operation.description).to eq nil
+      #     expect(ServiceKey.count).to eq(1)
+      #     expect(ServiceKeyOperation.count).to eq(1)
+      #   end
+      # end
+    end
   end
 end

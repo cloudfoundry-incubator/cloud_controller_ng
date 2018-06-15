@@ -479,7 +479,7 @@ module VCAP::CloudController
                 it 'should throw invalid service key error' do
                   expect(last_response).to have_status_code(400)
                   expect(decoded_response['error_code']).to eq 'CF-ServiceKeyInvalid'
-                  expect(decoded_response['description']).to match('Could not create asynchronous key')
+                  expect(decoded_response['description']).to match('Could not create asynchronous service key')
                 end
               end
 
@@ -691,6 +691,7 @@ module VCAP::CloudController
     describe 'DELETE', '/v2/service_keys/:service_key_guid' do
       let(:service_key) { ServiceKey.make }
       let(:instance) { service_key.service_instance }
+      let(:broker) { instance.service_plan.service.service_broker }
       let(:developer) { make_developer_for_space(instance.space) }
 
       before do

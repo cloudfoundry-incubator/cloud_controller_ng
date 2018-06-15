@@ -4,7 +4,9 @@ require 'actions/services/service_key_create'
 module VCAP::CloudController
   RSpec.describe ServiceKeyCreate do
     subject(:service_key_create) { ServiceKeyCreate.new(logger) }
-    let(:service_instance) { ManagedServiceInstance.make }
+    let(:service) { Service.make(bindings_retrievable: true) }
+    let(:service_plan) { ServicePlan.make(service: service) }
+    let(:service_instance) { ManagedServiceInstance.make(service_plan: service_plan) }
     let(:service_binding_url_pattern) { %r{/v2/service_instances/#{service_instance.guid}/service_bindings/} }
     let(:client) { instance_double(VCAP::Services::ServiceBrokers::V2::Client) }
 
@@ -20,7 +22,7 @@ module VCAP::CloudController
       before do
         allow(VCAP::Services::ServiceClientProvider).to receive(:provide).
           and_return(client)
-        allow(client).to receive(:create_service_key).and_return({ credentials: { foo: 'bar' } })
+        allow(client).to receive(:create_service_key).and_return({ key: { credentials: { foo: 'bar' } } })
 
         allow(logger).to receive :error
         allow(logger).to receive :info
@@ -58,15 +60,55 @@ module VCAP::CloudController
           allow_any_instance_of(ServiceKey).to receive(:save).and_raise
         end
 
-        it 'immediately attempts to unbind the service instance' do
+        it 'immediately attempts to delete the service key' do
           expect_any_instance_of(SynchronousOrphanMitigate).to receive(:attempt_delete_key)
           subject.create(service_instance, key_attrs, {})
         end
 
-        it 'logs that the unbind failed' do
+        it 'logs that the save failed' do
           allow_any_instance_of(SynchronousOrphanMitigate).to receive(:attempt_delete_key)
           subject.create(service_instance, key_attrs, {})
           expect(logger).to have_received(:error).with /Failed to save/
+        end
+      end
+
+      context 'when accepts_incomplete=true' do
+        let(:accepts_incomplete) { true }
+        context 'and the broker responds asynchronously' do
+          before do
+            allow(client).to receive(:create_service_key).and_return({ async: true, key: { credentials: { foo: 'bar' } }, operation: '123' })
+          end
+
+          it 'returns the service key operation' do
+            service_key, errors = service_key_create.create(service_instance, key_attrs, accepts_incomplete)
+            expect(ServiceKey.count).to eq(1)
+            expect(ServiceKeyOperation.count).to eq(1)
+            expect(service_key.last_operation.state).to eq('in progress')
+          end
+
+          it 'service key operation has broker provided operation' do
+            service_key, errors = service_key_create.create(service_instance, key_attrs, accepts_incomplete)
+            expect(service_key.last_operation.broker_provided_operation).to eq('123')
+          end
+
+          it 'service key operation has type create' do
+            service_key, errors = service_key_create.create(service_instance, key_attrs, accepts_incomplete)
+            expect(service_key.last_operation.type).to eq('create')
+          end
+
+          it 'does not audit a create service key event' do
+            service_key, errors = service_key_create.create(service_instance, key_attrs, accepts_incomplete)
+            expect(Event.count).to eq(0)
+          end
+
+          # it 'enqueues a fetch job' do
+          #   expect {
+          #     service_key_create.create(app, service_instance, message, volume_mount_services_enabled, accepts_incomplete)
+          #   }.to change { Delayed::Job.count }.from(0).to(1)
+          #
+          #   expect(Delayed::Job.first).to be_a_fully_wrapped_job_of Jobs::Services::ServicekeyStateFetch
+          #   expect(Delayed::Job.first.queue).to eq('cc-generic')
+          # end
         end
       end
     end

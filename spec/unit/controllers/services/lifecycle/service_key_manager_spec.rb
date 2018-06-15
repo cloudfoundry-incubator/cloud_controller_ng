@@ -3,13 +3,7 @@ require 'spec_helper'
 module VCAP::CloudController
   RSpec.describe ServiceKeyManager do
     let(:guid_pattern) { '[[:alnum:]-]+' }
-    let(:unbind_status) { 200 }
-    let(:unbind_body) { {} }
-
     let(:services_event_repository) { double :services_event_respository, record_service_key_event: nil }
-    let(:service_key) { ServiceKey.make }
-    let(:service_key_delete_action) { double(:service_key_delete_action) }
-    let(:delete_action_job) { double(:delete_action_job) }
 
     subject { ServiceKeyManager.new(services_event_repository, nil, nil) }
 
@@ -23,7 +17,16 @@ module VCAP::CloudController
         to_return(status: unbind_status, body: unbind_body.to_json)
     end
 
+    #TODO: Add create context with pertinents expectations
+
     context '#delete' do
+      let(:service_key) { ServiceKey.make }
+      let(:unbind_status) { 200 }
+      let(:unbind_body) { {} }
+
+      let(:service_key_delete_action) { double(:service_key_delete_action) }
+      let(:delete_action_job) { double(:delete_action_job) }
+
       before do
         stub_requests(service_key.service_instance.service.service_broker)
       end
