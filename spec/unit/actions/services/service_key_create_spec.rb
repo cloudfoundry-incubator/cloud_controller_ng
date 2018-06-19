@@ -74,30 +74,32 @@ module VCAP::CloudController
 
       context 'when accepts_incomplete=true' do
         let(:accepts_incomplete) { true }
+        let(:arbitrary_parameters) { {} }
+
         context 'and the broker responds asynchronously' do
           before do
-            allow(client).to receive(:create_service_key).and_return({ async: true, key: { credentials: { foo: 'bar' } }, operation: '123' })
+            allow(client).to receive(:create_service_key).and_return({ async: true, service_key: { credentials: { foo: 'bar' } }, operation: '123' })
           end
 
           it 'returns the service key operation' do
-            service_key, errors = service_key_create.create(service_instance, key_attrs, accepts_incomplete)
+            service_key, errors = service_key_create.create(service_instance, key_attrs, arbitrary_parameters, accepts_incomplete)
             expect(ServiceKey.count).to eq(1)
             expect(ServiceKeyOperation.count).to eq(1)
             expect(service_key.last_operation.state).to eq('in progress')
           end
 
           it 'service key operation has broker provided operation' do
-            service_key, errors = service_key_create.create(service_instance, key_attrs, accepts_incomplete)
+            service_key, errors = service_key_create.create(service_instance, key_attrs, arbitrary_parameters, accepts_incomplete)
             expect(service_key.last_operation.broker_provided_operation).to eq('123')
           end
 
           it 'service key operation has type create' do
-            service_key, errors = service_key_create.create(service_instance, key_attrs, accepts_incomplete)
+            service_key, errors = service_key_create.create(service_instance, key_attrs, arbitrary_parameters, accepts_incomplete)
             expect(service_key.last_operation.type).to eq('create')
           end
 
           it 'does not audit a create service key event' do
-            service_key, errors = service_key_create.create(service_instance, key_attrs, accepts_incomplete)
+            service_key, errors = service_key_create.create(service_instance, key_attrs, arbitrary_parameters, accepts_incomplete)
             expect(Event.count).to eq(0)
           end
 

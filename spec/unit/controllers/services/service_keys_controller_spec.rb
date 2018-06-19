@@ -457,7 +457,6 @@ module VCAP::CloudController
                     expect(key.last_operation.broker_provided_operation).to eq('123')
                   end
                 end
-
               end
 
               context 'and the broker is synchronous' do

@@ -7,13 +7,14 @@ module VCAP::CloudController
     class ServiceInstanceNotBindable < StandardError; end
     class ServiceInstanceUserProvided < StandardError; end
 
-    def initialize(services_event_repository, access_validator, logger)
+    def initialize(services_event_repository, access_validator, logger, accepts_incomplete)
       @services_event_repository = services_event_repository
       @access_validator = access_validator
       @logger = logger
+      @accepts_incomplete = accepts_incomplete
     end
 
-    def create_service_key(request_attrs, accepts_incomplete)
+    def create_service_key(request_attrs)
       service_instance = ServiceInstance.first(guid: request_attrs['service_instance_guid'])
       raise ServiceInstanceNotFound unless service_instance
       raise ServiceInstanceNotBindable unless service_instance.bindable?
@@ -25,7 +26,8 @@ module VCAP::CloudController
         service_instance,
         request_attrs.except('parameters'),
         request_attrs['parameters'],
-        accepts_incomplete
+        # TODO use the instance variable
+        @accepts_incomplete
       )
 
       if errors.present?
@@ -36,7 +38,7 @@ module VCAP::CloudController
     end
 
     def delete_service_key(service_key)
-      delete_action = ServiceKeyDelete.new
+      delete_action = ServiceKeyDelete.new(@accepts_incomplete)
       deletion_job = Jobs::DeleteActionJob.new(ServiceKey, service_key.guid, delete_action)
       delete_and_audit_job = Jobs::AuditEventJob.new(
         deletion_job,

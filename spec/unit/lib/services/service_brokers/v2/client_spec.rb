@@ -821,7 +821,7 @@ module VCAP::Services::ServiceBrokers::V2
 
       it 'sets the credentials on the key' do
         attributes = client.create_service_key(key)
-        key.set(attributes[:key])
+        key.set(attributes[:service_key])
         key.save
 
         expect(key.credentials).to eq({

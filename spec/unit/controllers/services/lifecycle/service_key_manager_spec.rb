@@ -5,7 +5,7 @@ module VCAP::CloudController
     let(:guid_pattern) { '[[:alnum:]-]+' }
     let(:services_event_repository) { double :services_event_respository, record_service_key_event: nil }
 
-    subject { ServiceKeyManager.new(services_event_repository, nil, nil) }
+    subject { ServiceKeyManager.new(services_event_repository, nil, nil, false) }
 
     def broker_url(broker)
       broker.broker_url
@@ -84,6 +84,21 @@ module VCAP::CloudController
               expect(ServiceKey.find(guid: service_key.guid)).not_to be_nil
             end
           end
+        end
+      end
+      context 'when accepts_incomplete is true' do
+        let(:accepts_incomplete) { true }
+        let(:service_key_manager) { ServiceKeyManager.new(services_event_repository, nil, nil, accepts_incomplete) }
+
+        before do
+          allow(VCAP::CloudController::Jobs::DeleteActionJob).to receive(:new).with(ServiceKey, service_key.guid, service_key_delete_action).and_return(delete_action_job)
+          allow(delete_action_job).to receive(:perform)
+        end
+
+        it 'creates the service key delete action using it' do
+          expect(VCAP::CloudController::ServiceKeyDelete).to receive(:new).with(true).and_return(service_key_delete_action)
+
+          service_key_manager.delete_service_key(service_key)
         end
       end
     end

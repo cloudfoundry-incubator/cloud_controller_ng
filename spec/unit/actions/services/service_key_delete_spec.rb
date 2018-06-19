@@ -4,7 +4,7 @@ require 'actions/services/service_key_delete'
 module VCAP::CloudController
   RSpec.describe ServiceKeyDelete do
     let(:guid_pattern) { '[[:alnum:]-]+' }
-    subject(:service_key_delete) { ServiceKeyDelete.new }
+    subject(:service_key_delete) { ServiceKeyDelete.new(false) }
 
     def broker_url(broker)
       base_broker_uri = URI.parse(broker.broker_url)
@@ -45,8 +45,8 @@ module VCAP::CloudController
 
       it 'deletes the service key from broker side' do
         service_key_delete.delete(service_key_dataset)
-        expect(client).to have_received(:unbind).with(service_key_1)
-        expect(client).to have_received(:unbind).with(service_key_2)
+        expect(client).to have_received(:unbind).with(service_key_1, nil, false)
+        expect(client).to have_received(:unbind).with(service_key_2, nil, false)
       end
 
       it 'fails if the instance has another operation in progress' do
@@ -59,9 +59,9 @@ module VCAP::CloudController
         let(:service_key_3) { ServiceKey.make }
 
         before do
-          allow(client).to receive(:unbind).with(service_key_1).and_return({})
-          allow(client).to receive(:unbind).with(service_key_2).and_raise('meow')
-          allow(client).to receive(:unbind).with(service_key_3).and_return({})
+          allow(client).to receive(:unbind).with(service_key_1, nil, false).and_return({})
+          allow(client).to receive(:unbind).with(service_key_2, nil, false).and_raise('meow')
+          allow(client).to receive(:unbind).with(service_key_3, nil, false).and_return({})
         end
 
         it 'deletes all other keys' do
@@ -75,6 +75,40 @@ module VCAP::CloudController
         it 'returns all of the errors caught' do
           errors = service_key_delete.delete(service_key_dataset)
           expect(errors[0].message).to eq('meow')
+        end
+      end
+
+      context 'when accepts_incomplete is true' do
+        let(:service_key_delete) { ServiceKeyDelete.new(true) }
+
+        context 'when the broker responds asynchronously' do
+          let(:service_key_operation) { ServiceKeyOperation.make }
+
+          before do
+            allow(client).to receive(:unbind).and_return({ async: true, operation: '123' })
+          end
+
+          it 'asks the broker to delete the service key async' do
+            expect(client).to receive(:unbind).with(service_key_1, nil, true)
+            service_key_delete.delete(service_key_dataset)
+          end
+
+          context 'when the service key does not already have an operation' do
+            it 'updates the service key operation in the model' do
+              service_key_delete.delete(service_key_dataset)
+              service_key_2.reload
+
+              expect(service_key_2.last_operation.type).to eql('delete')
+              expect(service_key_2.last_operation.state).to eql('in progress')
+            end
+
+            it 'service key operation has broker provided operation' do
+              service_key_delete.delete(service_key_dataset)
+              service_key_1.reload
+
+              expect(service_key_1.last_operation.broker_provided_operation).to eq('123')
+            end
+          end
         end
       end
     end

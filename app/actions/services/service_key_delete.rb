@@ -4,24 +4,34 @@ module VCAP::CloudController
   class ServiceKeyDelete
     include VCAP::CloudController::LockCheck
 
-    def delete(service_binding_dataset)
-      service_binding_dataset.each_with_object([]) do |service_binding, errs|
-        errs.concat delete_service_binding(service_binding)
+    def initialize(accepts_incomplete)
+      @accepts_incomplete = accepts_incomplete
+    end
+
+    def delete(service_key_dataset)
+      service_key_dataset.each_with_object([]) do |service_key, errs|
+        errs.concat delete_service_key(service_key)
       end
     end
 
     private
 
-    def delete_service_binding(service_binding)
+    def delete_service_key(service_key)
       errors = []
-      service_instance = service_binding.service_instance
+      service_instance = service_key.service_instance
       client = VCAP::Services::ServiceClientProvider.provide(instance: service_instance)
 
       begin
         raise_if_instance_locked(service_instance)
+        # FIXME do we need user_audit_info ?
+        broker_response = client.unbind(service_key, nil, @accepts_incomplete)
 
-        client.unbind(service_binding)
-        service_binding.destroy
+        if broker_response[:async]
+          service_key.save_with_new_operation({ type: 'delete', state: 'in progress', broker_provided_operation: broker_response[:operation] })
+          # Fetch last operation and update the service key object
+        else
+          service_key.destroy
+        end
       rescue => e
         errors << e
       end

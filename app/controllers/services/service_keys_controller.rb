@@ -34,8 +34,8 @@ module VCAP::CloudController
       @request_attrs = self.class::CreateMessage.decode(body).extract(stringify_keys: true)
       logger.debug 'cc.create', model: self.class.model_class_name, attributes: request_attrs
       raise InvalidRequest unless request_attrs
-      service_key_manager = ServiceKeyManager.new(@services_event_repository, self, logger)
-      service_key = service_key_manager.create_service_key(@request_attrs, accepts_incomplete)
+      service_key_manager = ServiceKeyManager.new(@services_event_repository, self, logger, accepts_incomplete)
+      service_key = service_key_manager.create_service_key(@request_attrs)
 
       @services_event_repository.record_service_key_event(:create, service_key)
 
@@ -64,10 +64,18 @@ module VCAP::CloudController
         e.name == 'NotAuthorized' ? raise(CloudController::Errors::ApiError.new_from_details('ServiceKeyNotFound', guid)) : raise(e)
       end
 
-      key_manager = ServiceKeyManager.new(@services_event_repository, self, logger)
+      key_manager = ServiceKeyManager.new(@services_event_repository, self, logger, accepts_incomplete)
       key_manager.delete_service_key(service_key)
 
-      [HTTP::NO_CONTENT, nil]
+
+      if accepts_incomplete && service_key.exists?
+        [HTTP::ACCEPTED,
+         { 'Location' => "#{self.class.path}/#{service_key.guid}" },
+         object_renderer.render_json(self.class, service_key, @opts)
+        ]
+      else
+        [HTTP::NO_CONTENT, nil]
+      end
     end
 
     get '/v2/service_keys/:guid', :read

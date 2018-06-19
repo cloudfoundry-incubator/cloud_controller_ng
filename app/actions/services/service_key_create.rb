@@ -23,7 +23,7 @@ module VCAP::CloudController
         service_key_result = client.create_service_key(service_key, arbitrary_parameters: arbitrary_parameters, accepts_incomplete: accepts_incomplete)
 
         begin
-          service_key.set(service_key_result[:key])
+          service_key.set(service_key_result[:service_key])
           if service_key_result[:async]
             raise ServiceBrokerInvalidServiceKeyRetrievable.new unless service_key.service.bindings_retrievable
             service_key.save_with_new_operation({ type: 'create', state: 'in progress', broker_provided_operation: service_key_result[:operation] })

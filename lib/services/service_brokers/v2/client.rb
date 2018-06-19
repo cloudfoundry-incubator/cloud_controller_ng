@@ -95,7 +95,7 @@ module VCAP::Services::ServiceBrokers::V2
       attributes = { credentials: parsed_response['credentials'] }
       {
         async: async_response?(response),
-        key: attributes,
+        service_key: attributes,
         operation: parsed_response['operation']
       }
     rescue Errors::ServiceBrokerApiTimeout, Errors::ServiceBrokerBadResponse => e
