@@ -18,11 +18,13 @@ module VCAP::CloudController
           'service_instance_guid' => service_instance.guid,
         }
       end
+      let(:arbitrary_parameters) { {} }
+      let(:accepts_incomplete) { false }
 
       before do
         allow(VCAP::Services::ServiceClientProvider).to receive(:provide).
           and_return(client)
-        allow(client).to receive(:create_service_key).and_return({ key: { credentials: { foo: 'bar' } } })
+        allow(client).to receive(:create_service_key).and_return({ service_key: { credentials: { foo: 'bar' } } })
 
         allow(logger).to receive :error
         allow(logger).to receive :info
@@ -30,7 +32,7 @@ module VCAP::CloudController
 
       it 'successfully sets service key credentials' do
         service_key_create = ServiceKeyCreate.new(logger)
-        key, errors = service_key_create.create(service_instance, key_attrs, {})
+        key, errors = service_key_create.create(service_instance, key_attrs, arbitrary_parameters, accepts_incomplete)
         expect(errors).to be_empty
         expect(key.credentials).to eq({ 'foo' => 'bar' })
       end
@@ -39,7 +41,7 @@ module VCAP::CloudController
         it 'fails' do
           service_instance.service_instance_operation = ServiceInstanceOperation.make state: 'in progress'
           service_key_create = ServiceKeyCreate.new(logger)
-          _, errors = service_key_create.create(service_instance, key_attrs, {})
+          _, errors = service_key_create.create(service_instance, key_attrs, arbitrary_parameters, accepts_incomplete)
           expect(errors.first).to be_instance_of CloudController::Errors::ApiError
         end
       end
@@ -50,7 +52,7 @@ module VCAP::CloudController
         end
 
         it 'does not create a key' do
-          ServiceKeyCreate.new(logger).create(service_instance, key_attrs, {})
+          ServiceKeyCreate.new(logger).create(service_instance, key_attrs, arbitrary_parameters, accepts_incomplete)
           expect(ServiceKey.count).to eq 0
         end
       end
@@ -62,19 +64,18 @@ module VCAP::CloudController
 
         it 'immediately attempts to delete the service key' do
           expect_any_instance_of(SynchronousOrphanMitigate).to receive(:attempt_delete_key)
-          subject.create(service_instance, key_attrs, {})
+          subject.create(service_instance, key_attrs, arbitrary_parameters, accepts_incomplete)
         end
 
         it 'logs that the save failed' do
           allow_any_instance_of(SynchronousOrphanMitigate).to receive(:attempt_delete_key)
-          subject.create(service_instance, key_attrs, {})
+          subject.create(service_instance, key_attrs, arbitrary_parameters, accepts_incomplete)
           expect(logger).to have_received(:error).with /Failed to save/
         end
       end
 
       context 'when accepts_incomplete=true' do
         let(:accepts_incomplete) { true }
-        let(:arbitrary_parameters) { {} }
 
         context 'and the broker responds asynchronously' do
           before do

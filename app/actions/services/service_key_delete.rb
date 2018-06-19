@@ -4,7 +4,7 @@ module VCAP::CloudController
   class ServiceKeyDelete
     include VCAP::CloudController::LockCheck
 
-    def initialize(accepts_incomplete)
+    def initialize(accepts_incomplete=false)
       @accepts_incomplete = accepts_incomplete
     end
 
