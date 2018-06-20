@@ -22,6 +22,7 @@ module VCAP::CloudController
       %r{#{broker_url(broker)}/v2/service_instances/#{service_instance_guid}/service_bindings/#{service_key_guid}}
     end
 
+
     describe '#delete' do
       let!(:service_key_1) { ServiceKey.make }
       let!(:service_key_2) { ServiceKey.make }
@@ -57,9 +58,10 @@ module VCAP::CloudController
 
       it 'fails if the instance has another operation in progress' do
         service_instance.service_instance_operation = ServiceInstanceOperation.make state: 'in progress'
-        errors = service_key_delete.delete([service_key_1])
+        errors, warnings = service_key_delete.delete([service_key_1])
         expect(errors.first).to be_instance_of CloudController::Errors::ApiError
         expect(errors.first.message).to eq("An operation for service instance #{service_instance.name} is in progress.")
+        expect(warnings).to be_empty
       end
 
       context 'when one key deletion fails' do
@@ -80,8 +82,9 @@ module VCAP::CloudController
         end
 
         it 'returns all of the errors caught' do
-          errors = service_key_delete.delete(service_key_dataset)
+          errors, warnings = service_key_delete.delete(service_key_dataset)
           expect(errors[0].message).to eq('meow')
+          expect(warnings).to be_empty
         end
       end
 
@@ -117,6 +120,90 @@ module VCAP::CloudController
             end
           end
         end
+      end
+      context 'when broker responds to accepts_incomplete flag' do
+        let(:service_key) { ServiceKey.make }
+
+        before do
+          allow(VCAP::Services::ServiceClientProvider).to receive(:provide).and_return(client)
+          allow(client).to receive(:unbind).and_return({})
+        end
+
+        context 'when accepts_incomplete is true' do
+          let(:accepts_incomplete) { true }
+
+          context 'when the broker responds synchronously' do
+            before do
+              allow(client).to receive(:unbind).and_return({ async: false })
+            end
+
+            it 'there should be no warnings or errors' do
+              errors, warnings = service_key_delete.delete(service_key)
+              expect(warnings).to be_empty
+              expect(errors).to be_empty
+            end
+          end
+
+          context 'when the broker responds asynchronously' do
+            before do
+              allow(client).to receive(:unbind).and_return({ async: true })
+            end
+
+            it 'there should be no warnings or errors' do
+              errors, warnings = service_key_delete.delete(service_key)
+              expect(warnings).to be_empty
+              expect(errors).to be_empty
+            end
+          end
+        end
+
+        context 'when accepts_incomplete is false' do
+          let(:accepts_incomplete) { false }
+
+          context 'when the broker unexpectedly responds asynchronously' do
+            let(:expected_warning) do
+              ['The service broker responded asynchronously to the unbind request, but the accepts_incomplete query parameter was false or not given.',
+               'The service key may not have been successfully deleted on the service broker.'].join(' ')
+            end
+
+            before do
+              allow(client).to receive(:unbind).and_return({ async: true })
+            end
+
+            it 'should say that the broker responded poorly' do
+              errors, warnings = service_key_delete.delete(service_key)
+              expect(warnings).to match_array([expected_warning])
+              expect(errors).to be_empty
+            end
+
+            context 'when delete is called with multiple bindings' do
+              it 'should return warnings for both bindings' do
+                errors, warnings = service_key_delete.delete([service_key, ServiceKey.make])
+                expect(warnings).to match_array([expected_warning, expected_warning])
+                expect(errors).to be_empty
+              end
+            end
+          end
+
+          context 'when the broker responded synchronously' do
+            before do
+              allow(client).to receive(:unbind).and_return({ async: false })
+            end
+
+            it 'there should be no warnings or errors' do
+              errors, warnings = service_key_delete.delete(service_key)
+              expect(warnings).to be_empty
+              expect(errors).to be_empty
+            end
+          end
+        end
+      end
+    end
+
+
+    describe '#can_return_warnings?' do
+      it 'returns true' do
+        expect(service_key_delete.can_return_warnings?).to be true
       end
     end
   end
