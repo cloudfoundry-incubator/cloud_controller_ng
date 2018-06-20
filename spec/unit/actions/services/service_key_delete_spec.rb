@@ -43,6 +43,12 @@ module VCAP::CloudController
         expect { service_key_2.refresh }.to raise_error Sequel::Error, 'Record not found'
       end
 
+      it 'deletes single service key' do
+        service_key_delete.delete(service_key_1)
+
+        expect { service_key_1.refresh }.to raise_error Sequel::Error, 'Record not found'
+      end
+
       it 'deletes the service key from broker side' do
         service_key_delete.delete(service_key_dataset)
         expect(client).to have_received(:unbind).with(service_key_1, nil, false)
@@ -53,6 +59,7 @@ module VCAP::CloudController
         service_instance.service_instance_operation = ServiceInstanceOperation.make state: 'in progress'
         errors = service_key_delete.delete([service_key_1])
         expect(errors.first).to be_instance_of CloudController::Errors::ApiError
+        expect(errors.first.message).to eq("An operation for service instance #{service_instance.name} is in progress.")
       end
 
       context 'when one key deletion fails' do

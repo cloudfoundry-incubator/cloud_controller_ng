@@ -749,6 +749,19 @@ module VCAP::CloudController
         expect { service_key.refresh }.to raise_error Sequel::Error, 'Record not found'
       end
 
+      context 'when the broker returns an error' do
+        let(:unbind_status) { 500 }
+        let(:unbind_body) { { description: 'ERROR MESSAGE HERE' } }
+
+        it 'returns a 502 status code ' do
+          delete "/v2/service_keys/#{service_key.guid}"
+          expect(last_response).to have_status_code(502)
+          expect(decoded_response['error_code']).to eq 'CF-ServiceBrokerBadResponse'
+
+          expect(ServiceKey.find(guid: service_key.guid)).to exist
+        end
+      end
+
       it 'creates an audit event after a service key deleted' do
         delete "/v2/service_keys/#{service_key.guid}"
 

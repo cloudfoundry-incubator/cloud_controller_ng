@@ -8,9 +8,10 @@ module VCAP::CloudController
       @accepts_incomplete = accepts_incomplete
     end
 
-    def delete(service_key_dataset)
-      service_key_dataset.each_with_object([]) do |service_key, errs|
-        errs.concat delete_service_key(service_key)
+    def delete(service_keys)
+      service_keys_to_delete = Array(service_keys)
+      service_keys_to_delete.each_with_object([]) do |service_key, errors|
+        errors.concat delete_service_key(service_key)
       end
     end
 

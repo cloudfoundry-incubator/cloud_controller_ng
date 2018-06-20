@@ -1,7 +1,15 @@
 require 'vcap/services/api'
+require 'actions/services/service_key_delete'
+require 'actions/services/service_key_create'
 
 module VCAP::CloudController
   class ServiceKeysController < RestController::ModelController
+    ERROR_MESSAGES = {
+      service_instance_not_bindable: "This service doesn't support creation of keys.",
+      service_instance_is_user_provided: 'Service keys are not supported for user-provided service instances.'
+    }.freeze
+    private_constant :ERROR_MESSAGES
+
     define_attributes do
       to_one :service_instance
       attribute :name, String
@@ -34,8 +42,28 @@ module VCAP::CloudController
       @request_attrs = self.class::CreateMessage.decode(body).extract(stringify_keys: true)
       logger.debug 'cc.create', model: self.class.model_class_name, attributes: request_attrs
       raise InvalidRequest unless request_attrs
-      service_key_manager = ServiceKeyManager.new(@services_event_repository, self, logger, accepts_incomplete)
-      service_key = service_key_manager.create_service_key(@request_attrs)
+
+      service_instance = ServiceInstance.first(guid: request_attrs['service_instance_guid'])
+      raise CloudController::Errors::ApiError.new_from_details('ServiceInstanceNotFound', @request_attrs['service_instance_guid']) unless service_instance
+      raise CloudController::Errors::ApiError.new_from_details('ServiceKeyNotSupported', ERROR_MESSAGES[:service_instance_not_bindable]) unless service_instance.bindable?
+      if service_instance.user_provided_instance?
+        raise CloudController::Errors::ApiError.new_from_details('ServiceKeyNotSupported', ERROR_MESSAGES[:service_instance_is_user_provided])
+      end
+
+      service_key = ServiceKey.new(request_attrs.except('parameters'))
+      validate_access(:create, service_key)
+      raise Sequel::ValidationFailed.new(service_key) unless service_key.valid?
+
+      service_key, errors = ServiceKeyCreate.new(logger).create(
+        service_instance,
+        request_attrs.except('parameters'),
+        request_attrs['parameters'],
+        accepts_incomplete
+      )
+
+      if errors.present?
+        raise errors.first
+      end
 
       @services_event_repository.record_service_key_event(:create, service_key)
 
@@ -43,14 +71,6 @@ module VCAP::CloudController
        { 'Location' => "#{self.class.path}/#{service_key.guid}" },
        object_renderer.render_json(self.class, service_key, @opts)
       ]
-    rescue ServiceKeyManager::ServiceInstanceNotFound
-      raise CloudController::Errors::ApiError.new_from_details('ServiceInstanceNotFound', @request_attrs['service_instance_guid'])
-    rescue ServiceKeyManager::ServiceInstanceNotBindable
-      error_message = "This service doesn't support creation of keys."
-      raise CloudController::Errors::ApiError.new_from_details('ServiceKeyNotSupported', error_message)
-    rescue ServiceKeyManager::ServiceInstanceUserProvided
-      error_message = 'Service keys are not supported for user-provided service instances.'
-      raise CloudController::Errors::ApiError.new_from_details('ServiceKeyNotSupported', error_message)
     rescue ServiceKeyCreate::ServiceBrokerInvalidServiceKeyRetrievable
       raise CloudController::Errors::ApiError.new_from_details('ServiceKeyInvalid', 'Could not create asynchronous service key when bindings_retrievable is false.')
     end
@@ -64,9 +84,11 @@ module VCAP::CloudController
         e.name == 'NotAuthorized' ? raise(CloudController::Errors::ApiError.new_from_details('ServiceKeyNotFound', guid)) : raise(e)
       end
 
-      key_manager = ServiceKeyManager.new(@services_event_repository, self, logger, accepts_incomplete)
-      key_manager.delete_service_key(service_key)
+      delete_action = ServiceKeyDelete.new(accepts_incomplete)
+      errors = delete_action.delete(service_key)
+      raise errors.first unless errors.empty?
 
+      @services_event_repository.record_service_key_event(:delete, service_key)
 
       if accepts_incomplete && service_key.exists?
         [HTTP::ACCEPTED,
