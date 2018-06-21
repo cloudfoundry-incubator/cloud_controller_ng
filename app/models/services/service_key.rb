@@ -98,5 +98,9 @@ module VCAP::CloudController
         self.service_key_operation(reload: true)
       end
     end
+
+    def terminal_state?
+      !service_key_operation || (['succeeded', 'failed'].include? service_key_operation.state)
+    end
   end
 end

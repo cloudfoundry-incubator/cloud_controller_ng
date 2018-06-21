@@ -198,5 +198,47 @@ module VCAP::CloudController
       #   end
       # end
     end
+
+    describe '#terminal_state?' do
+      let(:service_instance) { ServiceInstance.make }
+      let(:service_key) { ServiceKey.make(service_instance: service_instance) }
+      let(:operation) { ServiceKeyOperation.make(state: state) }
+
+      before do
+        service_key.service_key_operation = operation
+      end
+
+      context 'when state is succeeded' do
+        let(:state) { 'succeeded' }
+
+        it 'returns true' do
+          expect(service_key.terminal_state?).to be true
+        end
+      end
+
+      context 'when state is failed' do
+        let(:state) { 'failed' }
+
+        it 'returns true when state is `failed`' do
+          expect(service_key.terminal_state?).to be true
+        end
+      end
+
+      context 'when state is something else' do
+        let(:state) { 'in progress' }
+
+        it 'returns false' do
+          expect(service_key.terminal_state?).to be false
+        end
+      end
+
+      context 'when binding operation is missing' do
+        let(:operation) { nil }
+
+        it 'returns true' do
+          expect(service_key.terminal_state?).to be true
+        end
+      end
+    end
   end
 end

@@ -104,14 +104,14 @@ module VCAP::CloudController
             expect(Event.count).to eq(0)
           end
 
-          # it 'enqueues a fetch job' do
-          #   expect {
-          #     service_key_create.create(app, service_instance, message, volume_mount_services_enabled, accepts_incomplete)
-          #   }.to change { Delayed::Job.count }.from(0).to(1)
-          #
-          #   expect(Delayed::Job.first).to be_a_fully_wrapped_job_of Jobs::Services::ServicekeyStateFetch
-          #   expect(Delayed::Job.first.queue).to eq('cc-generic')
-          # end
+          it 'enqueues a fetch job' do
+            expect {
+              service_key_create.create(service_instance, key_attrs, arbitrary_parameters, accepts_incomplete)
+            }.to change { Delayed::Job.count }.from(0).to(1)
+
+            expect(Delayed::Job.first).to be_a_fully_wrapped_job_of Jobs::Services::ServiceBindingStateFetch
+            expect(Delayed::Job.first.queue).to eq('cc-generic')
+          end
         end
       end
     end

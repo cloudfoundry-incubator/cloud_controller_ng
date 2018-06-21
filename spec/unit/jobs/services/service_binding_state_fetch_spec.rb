@@ -51,6 +51,139 @@ module VCAP::CloudController
           context 'when the last_operation type is create' do
             let(:operation_type) { 'create' }
 
+            context 'service key' do
+              let(:service_key_operation) { ServiceKeyOperation.make(state: 'in progress', type: operation_type) }
+              let(:service_key) do
+                service_key = ServiceKey.make
+                service_key.service_key_operation = service_key_operation
+                service_key
+              end
+              let(:job) { VCAP::CloudController::Jobs::Services::ServiceBindingStateFetch.new(service_key.guid, user_info, request_attrs, :service_key) }
+              let(:description) { '50%' }
+
+              context 'when the last_operation state is succeeded' do
+                let(:state) { 'succeeded' }
+                let(:description) { '100%' }
+                let(:binding_response) { {} }
+
+                before do
+                  allow(client).to receive(:fetch_service_binding).with(service_key).and_return(binding_response)
+                  run_job(job)
+                end
+
+                it 'should update the service binding operation' do
+                  service_key.reload
+                  expect(service_key.last_operation.state).to eq('succeeded')
+                end
+
+                context 'and the broker returns valid credentials' do
+
+                  let(:binding_response) { { 'credentials': { 'a': 'b' } } }
+
+                  it 'should not enqueue another fetch job' do
+                    expect(Delayed::Job.count).to eq 0
+                  end
+
+                  it 'should update the service binding' do
+                    service_key.reload
+                    expect(service_key.credentials).to eq({ 'a' => 'b' })
+                  end
+                end
+
+                context 'and the broker returns invalid credentials' do
+                  let(:broker_response) {
+                    VCAP::Services::ServiceBrokers::V2::HttpResponse.new(
+                      code: '200',
+                      body: {}.to_json,
+                    )
+                  }
+                  let(:binding_response) { { 'credentials': 'invalid' } }
+                  let(:response_malformed_exception) { VCAP::Services::ServiceBrokers::V2::Errors::ServiceBrokerResponseMalformed.new(nil, nil, broker_response, nil) }
+
+                  before do
+                    allow(client).to receive(:fetch_service_binding).with(service_key).and_raise(response_malformed_exception)
+                  end
+
+                  it 'should not enqueue another fetch job' do
+                    expect(client).to receive(:unbind).with(service_key)
+
+                    run_job(job)
+                    expect(Delayed::Job.count).to eq 0
+                  end
+
+                  it 'should update the service binding last operation' do
+                    expect(client).to receive(:unbind).with(service_key)
+
+                    run_job(job)
+                    service_key.reload
+                    expect(service_key.last_operation.state).to eq('failed')
+                    expect(service_key.last_operation.description).to eq('A valid binding could not be fetched from the service broker.')
+                  end
+
+                  it 'should never show service binding last operation succeeded' do
+                    allow(client).to receive(:fetch_service_binding).with(service_key) do |service_key|
+                      service_key.reload
+                      expect(service_key.last_operation.state).to eq('in progress')
+
+                      raise response_malformed_exception
+                    end
+
+                    expect(client).to receive(:unbind).with(service_key)
+
+                    run_job(job)
+
+                    service_key.reload
+                    expect(service_key.last_operation.state).to eq('failed')
+                    expect(service_key.last_operation.description).to eq('A valid binding could not be fetched from the service broker.')
+                  end
+
+                  it 'should not create an audit event' do
+                    expect(client).to receive(:unbind).with(service_key)
+
+                    run_job(job)
+
+                    expect(Event.all.count).to eq 0
+                  end
+                end
+
+              end
+
+              context 'when the last_operation state is in progress' do
+                before do
+                  run_job(job)
+                end
+
+                it 'should not create an audit event' do
+                  event = Event.find(type: 'audit.service_key.create')
+                  expect(event).to be_nil
+                end
+
+                it 'should update the service binding operation' do
+                  service_key.reload
+                  expect(service_key.last_operation.description).to eq('50%')
+                end
+              end
+
+              context 'when the last_operation state is failed' do
+                let(:state) { 'failed' }
+                let(:description) { 'something went wrong' }
+
+                before do
+                  run_job(job)
+                end
+
+                it 'updates the service binding last operation details' do
+                  service_key.reload
+                  expect(service_key.last_operation.state).to eq('failed')
+                  expect(service_key.last_operation.description).to eq('something went wrong')
+                end
+
+                it 'should not enqueue another fetch job' do
+                  expect(Delayed::Job.count).to eq 0
+                end
+              end
+            end
+
             context 'when the last_operation state is succeeded' do
               let(:state) { 'succeeded' }
               let(:description) { '100%' }
