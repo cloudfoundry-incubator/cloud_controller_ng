@@ -85,8 +85,9 @@ module VCAP::CloudController
       end
 
       delete_action = ServiceKeyDelete.new(accepts_incomplete)
-      errors = delete_action.delete(service_key)
+      errors, warnings = delete_action.delete(service_key)
       raise errors.first unless errors.empty?
+      add_warnings_from_service_key_delete!(warnings)
 
       @services_event_repository.record_service_key_event(:delete, service_key)
 
@@ -147,6 +148,12 @@ module VCAP::CloudController
         HTTP::ACCEPTED
       else
         HTTP::CREATED
+      end
+    end
+
+    def add_warnings_from_service_key_delete!(warnings)
+      warnings.each do |warning|
+        add_warning(warning)
       end
     end
   end

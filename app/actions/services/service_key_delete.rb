@@ -10,9 +10,14 @@ module VCAP::CloudController
 
     def delete(service_keys)
       service_keys_to_delete = Array(service_keys)
-      service_keys_to_delete.each_with_object([]) do |service_key, errors|
-        errors.concat delete_service_key(service_key)
+      errors = []
+      warnings = []
+      service_keys_to_delete.each do |service_key|
+        result = delete_service_key(service_key)
+        errors.concat result.first
+        warnings.concat result.last
       end
+      [errors, warnings]
     end
 
     def can_return_warnings?
