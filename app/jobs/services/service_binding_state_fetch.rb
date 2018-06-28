@@ -3,6 +3,7 @@ module VCAP::CloudController
     module Services
       class ServiceBindingStateFetch < VCAP::CloudController::Jobs::CCJob
         def initialize(service_binding_guid, user_info, request_attrs, model_class)
+          # TODO change service_bdingin_guid
           @service_binding_guid = service_binding_guid
           @end_timestamp = Time.now + Config.config.get(:broker_client_max_async_poll_duration_minutes).minutes
           @user_audit_info = user_info
@@ -80,10 +81,10 @@ module VCAP::CloudController
         def retry_job
           update_polling_interval
           if Time.now + @poll_interval > @end_timestamp
-            # ServiceBinding.first(guid: @service_binding_guid).last_operation.update(
-            #   state: 'failed',
-            #   description: 'Service Broker failed to bind within the required time.'
-            # )
+            @model_class.first(guid: @service_binding_guid).last_operation.update(
+              state: 'failed',
+              description: 'Service Broker failed to bind within the required time.'
+            )
           else
             enqueue_again
           end

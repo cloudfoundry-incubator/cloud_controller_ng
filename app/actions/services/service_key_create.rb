@@ -28,10 +28,10 @@ module VCAP::CloudController
             raise ServiceBrokerInvalidServiceKeyRetrievable.new unless service_key.service.bindings_retrievable
             service_key.save_with_new_operation({ type: 'create', state: 'in progress', broker_provided_operation: service_key_result[:operation] })
 
-            job = VCAP::CloudController::Jobs::Services::ServiceBindingStateFetch.new(service_key.guid, @user_audit_info, {}, :service_key)
-            job.perform
-            # enqueuer = Jobs::Enqueuer.new(job, queue: 'cc-generic')
-            # enqueuer.enqueue
+            job = VCAP::CloudController::Jobs::Services::ServiceBindingStateFetch.new(service_key.guid, @user_audit_info, {}, ServiceKey)
+            # job.perform
+            enqueuer = Jobs::Enqueuer.new(job, queue: 'cc-generic')
+            enqueuer.enqueue
           end
 
           service_key.save

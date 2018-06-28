@@ -9,6 +9,7 @@ module VCAP::CloudController
     let(:service_instance) { ManagedServiceInstance.make(service_plan: service_plan) }
     let(:service_binding_url_pattern) { %r{/v2/service_instances/#{service_instance.guid}/service_bindings/} }
     let(:client) { instance_double(VCAP::Services::ServiceBrokers::V2::Client) }
+    # let(:client) { instance_double(VCAP::Services::ServiceBrokers::V2::Client, unbind: {}) }
 
     describe 'creating a service key' do
       let(:logger) { double(Steno::Logger) }
@@ -80,6 +81,7 @@ module VCAP::CloudController
         context 'and the broker responds asynchronously' do
           before do
             allow(client).to receive(:create_service_key).and_return({ async: true, service_key: { credentials: { foo: 'bar' } }, operation: '123' })
+            # allow(client).to receive(:fetch_service_binding_last_operation).and_return({ async: true, service_key: { credentials: { foo: 'bar' } }, operation: '123' })
           end
 
           it 'returns the service key operation' do
