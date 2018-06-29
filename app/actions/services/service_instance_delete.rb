@@ -21,12 +21,11 @@ module VCAP::CloudController
 
         binding_errors, binding_warnings = delete_service_bindings(service_instance)
         key_errors,  key_warnings = delete_service_keys(service_instance)
-        route_errors, route_warnings = delete_route_bindings(service_instance)
+        route_errors = delete_route_bindings(service_instance)
         unshare_errors = unshare_from_all_spaces(service_instance)
 
-        # binding.pry
         errors = [binding_errors, key_errors, route_errors, unshare_errors].flatten
-        warnings = [binding_warnings, key_warnings, route_warnings].flatten
+        warnings = [binding_warnings, key_warnings].flatten
 
         if errors.empty?
           instance_errors = delete_service_instance(service_instance)
