@@ -10,6 +10,7 @@ module VCAP::CloudController
           attrs         = request.dup.stringify_keys
           attrs['data'] = Presenters::Censorship::PRIVATE_DATA_HIDDEN if attrs.key?('data')
 
+          binding.pry
           record_event(
             type:            'audit.service_binding.create',
             service_binding: service_binding,

@@ -41,6 +41,17 @@ module VCAP::CloudController
 
         private
 
+        def fields_to_set
+          {
+            ServiceBinding => ['credentials', 'syslog_drain_url', 'volume_mounts'],
+            ServiceKey => ['credentials']
+          }[@model_class]
+        end
+
+        def resource_short_name
+          {ServiceBinding => 'binding', ServiceKey => 'service key'}[@model_class]
+        end
+
         def process_create_operation(logger, service_binding, last_operation_result)
           if state_succeeded?(last_operation_result)
             client = VCAP::Services::ServiceClientProvider.provide(instance: service_binding.service_instance)
@@ -53,11 +64,11 @@ module VCAP::CloudController
               return { finished: true }
             end
 
-            service_binding.update({
+            service_binding.update_fields({
               'credentials'      => binding_response[:credentials],
               'syslog_drain_url' => binding_response[:syslog_drain_url],
               'volume_mounts' => binding_response[:volume_mounts],
-            })
+            }, fields_to_set)
             record_event(service_binding, @request_attrs)
             service_binding.last_operation.update(last_operation_result[:last_operation])
             return { finished: true }
@@ -90,14 +101,18 @@ module VCAP::CloudController
           end
         end
 
-        def record_event(binding, request_attrs)
-          repository = Repositories::ServiceBindingEventRepository
-          operation_type = binding.last_operation.type
+        def record_event(resource, request_attrs)
+          operation_type = resource.last_operation.type
 
-          if operation_type == 'create'
-            repository.record_create(binding, @user_audit_info, request_attrs)
-          elsif operation_type == 'delete'
-            repository.record_delete(binding, @user_audit_info)
+          if @model_class.equal? ServiceBinding
+            #TODO: Think about why we need a separate event repository for service binding?
+            if operation_type == 'create'
+              Repositories::ServiceBindingEventRepository.record_create(resource, @user_audit_info, request_attrs)
+            elsif operation_type == 'delete'
+              Repositories::ServiceBindingEventRepository.record_delete(resource, @user_audit_info)
+            end
+          elsif @model_class.equal? ServiceKey
+            Repositories::ServiceEventRepository.new(@user_audit_info).record_service_key_event(operation_type, resource)
           end
         end
 
@@ -113,7 +128,7 @@ module VCAP::CloudController
         def set_binding_failed_state(service_binding, logger)
           service_binding.last_operation.update(
             state: 'failed',
-            description: 'A valid binding could not be fetched from the service broker.',
+            description: "A valid #{resource_short_name} could not be fetched from the service broker.",
           )
           SynchronousOrphanMitigate.new(logger).attempt_unbind(service_binding)
         end
