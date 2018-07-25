@@ -310,6 +310,20 @@ RSpec.describe 'Service Broker API integration' do
       end
     end
 
+    describe 'providing periods in service names' do
+      let(:catalog) do
+        catalog = default_catalog
+        catalog[:services].first[:name] = catalog[:services].first[:name] + '.'
+        catalog
+      end
+
+      it 'accepts periods in names from the catalog' do
+        get '/v2/services'
+        parsed_body = MultiJson.load(last_response.body)
+
+        expect(parsed_body['resources'].first['entity']['label']).to eq(catalog[:services].first[:name])
+      end
+    end
 
     describe 'providing vendor extension fields in the catalog' do
       let(:catalog) do
