@@ -309,5 +309,19 @@ RSpec.describe 'Service Broker API integration' do
         expect(plans_parsed_body['resources'].first['entity']['name']).to eq(catalog[:services].first[:plans].first[:name])
       end
     end
+
+
+    describe 'providing vendor extension fields in the catalog' do
+      let(:catalog) do
+        catalog = default_catalog
+        catalog[:vendor_extension_field] = 'some-value'
+        catalog
+      end
+
+      it 'still loads the catalog' do
+        get '/v2/services'
+        expect(last_response.status).to eq(200)
+      end
+    end
   end
 end
