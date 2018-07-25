@@ -1867,6 +1867,19 @@ module VCAP::CloudController
           end
         end
 
+        context 'when the broker updates the service instance without a dashboard url' do
+          let(:response_body) do
+            {}.to_json
+          end
+
+          it 'succeeds and persists the old dashboard url value' do
+            put "/v2/service_instances/#{service_instance.guid}", body
+
+            expect(last_response).to have_status_code 201
+            expect(decoded_response['entity']['dashboard_url']).to eq 'http://dashboard_url.com'
+          end
+        end
+
         describe 'error cases' do
           context 'when the service instance does not exist' do
             it 'returns a ServiceInstanceNotFound error' do
