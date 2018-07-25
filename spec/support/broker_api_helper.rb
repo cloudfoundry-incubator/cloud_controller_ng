@@ -102,7 +102,7 @@ module VCAP::CloudController::BrokerApiHelper
     @service_guid = response['resources'].first['metadata']['guid']
 
     service_plans = response['resources'].first['entity']['service_plans']
-    @plan_guid = service_plans.find { |plan| plan['entity']['name'] == 'small' }['metadata']['guid']
+    @plan_guid = service_plans.find { |plan| plan['entity']['name'].downcase == 'small' }['metadata']['guid']
 
     large_plan = service_plans.find { |plan| plan['entity']['name'] == 'large' }
     @large_plan_guid = large_plan['metadata']['guid'] if large_plan

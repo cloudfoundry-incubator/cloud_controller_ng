@@ -287,5 +287,27 @@ RSpec.describe 'Service Broker API integration' do
         end
       end
     end
+
+    describe 'providing uppercase characters in service and plan names' do
+      let(:catalog) do
+        catalog = default_catalog
+        catalog[:services].first[:name] = catalog[:services].first[:name].upcase
+        catalog[:services].first[:plans].first[:name] = catalog[:services].first[:plans].first[:name].upcase
+        catalog
+      end
+
+      it 'accepts uppercase from the catalog' do
+        get '/v2/services'
+        parsed_body = MultiJson.load(last_response.body)
+
+        expect(parsed_body['resources'].first['entity']['label']).to eq(catalog[:services].first[:name])
+
+        service_guid = parsed_body['resources'].first['metadata']['guid']
+        get "/v2/services/#{service_guid}/service_plans", {}.to_json, json_headers(admin_headers)
+
+        plans_parsed_body = MultiJson.load(last_response.body)
+        expect(plans_parsed_body['resources'].first['entity']['name']).to eq(catalog[:services].first[:plans].first[:name])
+      end
+    end
   end
 end
