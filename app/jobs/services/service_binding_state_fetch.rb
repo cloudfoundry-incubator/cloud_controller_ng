@@ -20,15 +20,9 @@ module VCAP::CloudController
           last_operation_result = client.fetch_service_binding_last_operation(service_binding)
           raise "Invalid response from client: #{last_operation_result}" unless valid_client_response?(last_operation_result)
 
-          if service_binding.last_operation.type == 'create'
-            create_result = process_create_operation(logger, service_binding, last_operation_result)
-            return if create_result[:finished]
-          elsif service_binding.last_operation.type == 'delete'
-            delete_result = process_delete_operation(service_binding, last_operation_result)
-            return if delete_result[:finished]
-          end
+          result = process_operation(service_binding, last_operation_result, logger, client, &method(service_binding.last_operation.type.to_sym))
 
-          retry_job unless service_binding.terminal_state?
+          retry_job unless result[:finished] || service_binding.terminal_state?
         rescue HttpResponseError, Sequel::Error, VCAP::Services::ServiceBrokers::V2::Errors::ServiceBrokerApiTimeout => e
           logger.error("There was an error while fetching the service binding operation state: #{e}")
           retry_job
@@ -40,41 +34,38 @@ module VCAP::CloudController
 
         private
 
-        def process_create_operation(logger, service_binding, last_operation_result)
+        def process_operation(service_binding, last_operation_result, logger, client, &block)
           if state_succeeded?(last_operation_result)
-            client = VCAP::Services::ServiceClientProvider.provide(instance: service_binding.service_instance)
-
-            begin
-              binding_response = client.fetch_service_binding(service_binding)
-            rescue HttpResponseError, VCAP::Services::ServiceBrokers::V2::Errors::ServiceBrokerApiTimeout => e
-              set_binding_failed_state(service_binding, logger)
-              logger.error("There was an error while fetching the service binding details: #{e}")
-              return { finished: true }
-            end
-
-            service_binding.update({
-              'credentials'      => binding_response[:credentials],
-              'syslog_drain_url' => binding_response[:syslog_drain_url],
-              'volume_mounts' => binding_response[:volume_mounts],
-            })
-            record_event(service_binding, @request_attrs)
-            service_binding.last_operation.update(last_operation_result[:last_operation])
-            return { finished: true }
+            return yield(service_binding, last_operation_result, logger, client)
           end
 
           service_binding.last_operation.update(last_operation_result[:last_operation])
           { finished: false }
         end
 
-        def process_delete_operation(service_binding, last_operation_result)
-          if state_succeeded?(last_operation_result)
-            service_binding.destroy
-            record_event(service_binding, @request_attrs)
+        def create(service_binding, last_operation_result, logger, client)
+          begin
+            binding_response = client.fetch_service_binding(service_binding)
+          rescue HttpResponseError, VCAP::Services::ServiceBrokers::V2::Errors::ServiceBrokerApiTimeout => e
+            set_binding_failed_state(service_binding, logger)
+            logger.error("There was an error while fetching the service binding details: #{e}")
             return { finished: true }
           end
 
+          service_binding.update({
+            'credentials'      => binding_response[:credentials],
+            'syslog_drain_url' => binding_response[:syslog_drain_url],
+            'volume_mounts' => binding_response[:volume_mounts],
+          })
+          record_create_event(service_binding, @request_attrs)
           service_binding.last_operation.update(last_operation_result[:last_operation])
-          { finished: false }
+          { finished: true }
+        end
+
+        def delete(service_binding, last_operation_result, logger, client)
+          service_binding.destroy
+          record_delete_event(service_binding)
+          { finished: true }
         end
 
         def retry_job
@@ -89,15 +80,12 @@ module VCAP::CloudController
           end
         end
 
-        def record_event(binding, request_attrs)
-          repository = Repositories::ServiceBindingEventRepository
-          operation_type = binding.last_operation.type
+        def record_create_event(binding, request_attrs)
+          Repositories::ServiceBindingEventRepository.record_create(binding, @user_audit_info, request_attrs)
+        end
 
-          if operation_type == 'create'
-            repository.record_create(binding, @user_audit_info, request_attrs)
-          elsif operation_type == 'delete'
-            repository.record_delete(binding, @user_audit_info)
-          end
+        def record_delete_event(binding)
+          Repositories::ServiceBindingEventRepository.record_delete(binding, @user_audit_info)
         end
 
         def enqueue_again
