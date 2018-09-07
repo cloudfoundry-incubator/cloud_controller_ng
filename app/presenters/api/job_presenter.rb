@@ -37,7 +37,25 @@ class JobPresenter < ApiPresenter
     [@url_host_name, "v2/jobs/#{@object.guid}"].join('/')
   end
 
+  def redact(redactable_error)
+    template_values = {}
+    redactable_error.template_parameters.each { |key, _| template_values[key] = 'REDACTED' }
+
+    redactable_error.template_parameters.each do |template_key, redactable_element|
+      obj = elem.object
+
+      if VCAP::CloudController::Security::AccessContext.new.can?(:read, obj)
+        template_values[template_key] = obj.send(elem.method)
+      end
+    end
+
+    ERB.new(redactable_error.template).result_with_hash(template_values)
+  end
+
   def error_details
+    if @object.redactable_error
+      redact(redactable_error)
+    end
     YAML.safe_load(@object.cf_api_error, [Symbol])
   end
 
@@ -48,7 +66,7 @@ class JobPresenter < ApiPresenter
   end
 
   def job_has_exception?
-    @object.cf_api_error
+    @object.cf_api_error || @object.redactable_error
   end
 
   def error_deprecation_message
@@ -76,7 +94,7 @@ class JobPresenter < ApiPresenter
   end
 
   def job_errored?
-    @object.cf_api_error
+    @object.cf_api_error || @object.redactable_error
   end
 
   class NullJob

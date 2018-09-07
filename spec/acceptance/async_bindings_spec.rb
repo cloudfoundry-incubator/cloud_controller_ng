@@ -35,6 +35,9 @@ module VCAP::CloudController
       context 'when a service instance is shared' do
         let(:service_instance) { ManagedServiceInstance.make }
         let(:target_space) { Space.make }
+        let(:source_space) { service_instance.space }
+        let(:source_space_dev) { make_developer_for_space(source_space) }
+        let(:dev_headers) { headers_for(source_space_dev) }
 
         before do
           service_instance.add_shared_space(target_space)
@@ -45,7 +48,7 @@ module VCAP::CloudController
           let!(:target_binding) { ServiceBinding.make(app: target_app, service_instance: service_instance) }
 
           it 'can unbind if the service instance is deleted recursively and accepts_incomplete is true' do
-            delete("/v2/service_instances/#{service_instance.guid}", 'recursive=true&accepts_incomplete=true', admin_headers)
+            delete("/v2/service_instances/#{service_instance.guid}", 'recursive=true&accepts_incomplete=true', dev_headers)
 
             expect(a_request(:delete, unbind_url(target_binding)).with(query: { accepts_incomplete: true })).to have_been_made
             expect(a_request(:delete, deprovision_url(service_instance)).with(query: { accepts_incomplete: true })).not_to have_been_made
@@ -53,11 +56,11 @@ module VCAP::CloudController
             expect(last_response).to have_status_code(502)
             body = JSON.parse(last_response.body)
             expect(body['error_code']).to eq 'CF-ServiceInstanceRecursiveDeleteFailed'
-            expect(body['description']).to eq async_unbind_in_progress_error(service_instance.name, target_app.name)
+            expect(body['description']).to eq async_unbind_in_progress_error(service_instance.name, '<REDACTED>')
           end
 
           it 'can unbind if the service instance is deleted recursively and accepts_incomplete is not set' do
-            delete("/v2/service_instances/#{service_instance.guid}", 'recursive=true', admin_headers)
+            delete("/v2/service_instances/#{service_instance.guid}", 'recursive=true', dev_headers)
 
             expect(a_request(:delete, unbind_url(target_binding))).to have_been_made
             expect(a_request(:delete, deprovision_url(service_instance))).not_to have_been_made
@@ -69,12 +72,11 @@ module VCAP::CloudController
           end
 
           context 'and when there are bindings in the source space' do
-            let(:source_space) { service_instance.space }
             let(:source_app) { AppModel.make(space: source_space) }
             let!(:source_binding) { ServiceBinding.make(app: source_app, service_instance: service_instance) }
 
             it 'can unbind if the service instance is deleted recursively and accepts_incomplete is true' do
-              delete("/v2/service_instances/#{service_instance.guid}", 'recursive=true&accepts_incomplete=true', admin_headers)
+              delete("/v2/service_instances/#{service_instance.guid}", 'recursive=true&accepts_incomplete=true', dev_headers)
 
               expect(last_response).to have_status_code(502)
 
@@ -84,11 +86,11 @@ module VCAP::CloudController
 
               body = JSON.parse(last_response.body)
               expect(body['error_code']).to eq 'CF-ServiceInstanceRecursiveDeleteFailed'
-              expect(body['description']).to match multiple_async_unbind_in_progress_error(service_instance.name, source_app.name, target_app.name)
+              expect(body['description']).to match multiple_async_unbind_in_progress_error(service_instance.name, source_app.name, '<REDACTED>')
             end
 
             it 'can unbind if the service instance is deleted recursively' do
-              delete("/v2/service_instances/#{service_instance.guid}", 'recursive=true', admin_headers)
+              delete("/v2/service_instances/#{service_instance.guid}", 'recursive=true', dev_headers)
 
               expect(last_response).to have_status_code(502)
 
@@ -319,10 +321,10 @@ module VCAP::CloudController
       "\tAn operation for the service binding between app #{app_name} and service instance #{instance_name} is in progress."
   end
 
-  def multiple_async_unbind_in_progress_error(instance_name, *apps_name)
+  def multiple_async_unbind_in_progress_error(instance_name, app_name_1, app_name_2)
     "^Deletion of service instance #{instance_name} failed because one or more associated resources could not be deleted.\n\n" \
-      "\tAn operation for the service binding between app .+ and service instance #{instance_name} is in progress.\n\n" \
-      "\tAn operation for the service binding between app .+ and service instance #{instance_name} is in progress.$"
+      "\tAn operation for the service binding between app #{app_name_1} and service instance #{instance_name} is in progress.\n\n" \
+      "\tAn operation for the service binding between app #{app_name_2} and service instance #{instance_name} is in progress.$"
   end
 
   def async_unbind_not_supported_error(instance_name)

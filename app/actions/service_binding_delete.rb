@@ -70,7 +70,57 @@ module VCAP::CloudController
       client.unbind(service_binding, @user_audit_info.user_guid, @accepts_incomplete)
     rescue => e
       logger.error("Failed unbinding #{service_binding.guid}: #{e.message}")
-      raise e
+      raise ServiceBindingError.new(service_binding)
+    end
+
+    class RedactableElement
+      def initialize(object, method)
+        @object = object
+        @method = method
+      end
+
+      def object
+        @object
+      end
+
+      def method
+        @method
+      end
+    end
+
+    class RedactableError < StandardError
+      def initialize(template, elements, suberrors)
+        @template = template
+        @elements = elements
+        @suberrors = suberrors # type RedactableError
+      end
+
+      def template_parameters
+        { }
+      end
+
+      def template
+        ''
+      end
+    end
+
+    class ServiceBindingError < RedactableError
+      def initialize(service_binding, message)
+        @app = service_binding.app
+        @instance = service_binding.service_instance
+        @message = message
+      end
+
+      def template
+        "Unable to remove the service binding between app <%= app_name %> and service instance <%= instance_name %>: #{@message}"
+      end
+
+      def template_parameters
+        {
+          app_name: RedactableElement.new(@app, :name),
+          instance_name: RedactableElement.new(@instance, :name)
+        }
+      end
     end
 
     def each_with_error_aggregation(list)

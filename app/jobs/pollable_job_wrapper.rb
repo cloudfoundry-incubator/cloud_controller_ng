@@ -19,6 +19,10 @@ module VCAP::CloudController
       end
 
       def error(job, exception)
+        if exception.is_a? RedactableError
+          save_redactable_error(exception, job)
+          return
+        end
         api_error = convert_to_v3_api_error(exception)
         save_error(api_error, job)
       end
@@ -37,6 +41,10 @@ module VCAP::CloudController
 
       def save_error(api_error, job)
         PollableJobModel.where(delayed_job_guid: job.guid).update(cf_api_error: api_error)
+      end
+
+      def save_redactable_error(redactable_error, job)
+        PollableJobModel.where(delayed_job_guid: job.guid).update(redactable_error: redactable_error)
       end
 
       def change_state(job, new_state)
