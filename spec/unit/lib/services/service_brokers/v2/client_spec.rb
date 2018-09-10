@@ -1285,7 +1285,10 @@ module VCAP::Services::ServiceBrokers::V2
           expect {
             client.unbind(binding)
           }.to raise_error(Errors::ServiceBrokerBadResponse).
-            with_message("Service broker failed to delete service binding for instance #{binding.service_instance.name}: Service broker error: Could not delete binding")
+            with_message(
+              "An unbind operation for the service binding between app #{binding.app.name} and service instance #{binding.service_instance.name} failed: " \
+              'Service broker error: Could not delete binding'
+            )
         end
       end
 
