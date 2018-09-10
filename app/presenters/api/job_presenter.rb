@@ -42,10 +42,10 @@ class JobPresenter < ApiPresenter
     redactable_error.template_parameters.each { |key, _| template_values[key] = 'REDACTED' }
 
     redactable_error.template_parameters.each do |template_key, redactable_element|
-      obj = elem.object
+      obj = redactable_element.object
 
       if VCAP::CloudController::Security::AccessContext.new.can?(:read, obj)
-        template_values[template_key] = obj.send(elem.method)
+        template_values[template_key] = obj.send(redactable_element.method)
       end
     end
 
@@ -66,7 +66,7 @@ class JobPresenter < ApiPresenter
   end
 
   def job_has_exception?
-    @object.cf_api_error || @object.redactable_error
+    @object.cf_api_error
   end
 
   def error_deprecation_message

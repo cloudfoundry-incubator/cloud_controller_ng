@@ -110,7 +110,7 @@ module VCAP::CloudController
       errors, warnings = service_binding_deleter.delete(service_instance.service_bindings)
       errors.reject! { |err| err.instance_of?(CloudController::Errors::ApiError) && err.code == 90008 }
       bindings_in_progress(service_instance).each do |service_binding|
-        errors << ServiceBindingOperationInProgressError.new(service_binding)
+        errors << ServiceBindingError.new(service_binding, err.message)
       end
 
       [errors, warnings]

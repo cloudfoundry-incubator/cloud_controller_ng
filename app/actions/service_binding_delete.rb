@@ -88,31 +88,46 @@ module VCAP::CloudController
       end
     end
 
-    class RedactableError < StandardError
-      def initialize(template, elements, suberrors)
-        @template = template
-        @elements = elements
-        @suberrors = suberrors # type RedactableError
-      end
+    # class RedactableError < StandardError
+    #   def initialize(template, elements, suberrors)
+    #     @template = template
+    #     @elements = elements
+    #     @suberrors = suberrors # type RedactableError
+    #   end
+    #
+    #   def template_parameters
+    #     { }
+    #   end
+    #
+    #   def template
+    #     ''
+    #   end
+    # end
 
-      def template_parameters
-        { }
-      end
-
-      def template
-        ''
-      end
-    end
-
-    class ServiceBindingError < RedactableError
+    class ServiceBindingError < StandardError
       def initialize(service_binding, message)
         @app = service_binding.app
         @instance = service_binding.service_instance
         @message = message
+
+        super(msg)
       end
 
       def template
         "Unable to remove the service binding between app <%= app_name %> and service instance <%= instance_name %>: #{@message}"
+      end
+
+      def msg
+        template_values = {}
+        template_parameters.each_key { |key| template_values[key] = '!REDACTED!' }
+
+        template_parameters.each do |key, redactable_element|
+          if VCAP::CloudController::Security::AccessContext.new.can?(:read, redactable_element.object)
+            template_values[key] = redactable_element.object.send(redactable_element.method)
+          end
+        end
+
+        ERB.new(template).result_with_hash(template_values)
       end
 
       def template_parameters
