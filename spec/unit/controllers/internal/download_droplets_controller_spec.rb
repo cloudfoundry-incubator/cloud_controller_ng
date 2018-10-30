@@ -39,7 +39,7 @@ module VCAP::CloudController
 
       def get_and_redirect(url)
         get url
-        expect(last_response.status).to eq(302)
+        expect(last_response).to have_status_code(302)
         get last_response.headers['Location']
       end
 
@@ -70,7 +70,7 @@ module VCAP::CloudController
           upload_droplet
 
           get_and_redirect "/internal/v2/droplets/#{process.guid}/#{process.droplet_checksum}/download"
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(last_response.headers['X-Accel-Redirect']).to match("/cc-droplets/.*/#{process.droplet_hash}")
         end
       end
@@ -82,7 +82,7 @@ module VCAP::CloudController
           upload_droplet
 
           get_and_redirect "/internal/v2/droplets/#{process.guid}/#{process.droplet_checksum}/download"
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(last_response.body).to eq('droplet contents')
         end
       end
@@ -94,27 +94,27 @@ module VCAP::CloudController
 
         it 'raises an error' do
           get_and_redirect "/internal/v2/droplets/#{process.guid}/#{process.droplet_checksum}/download"
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
           expect(decoded_response['description']).to eq("Staging error: droplet not found for #{process.guid}")
         end
 
         it 'fails if blobstore is remote' do
           get_and_redirect "/internal/v2/droplets/#{process.guid}/#{process.droplet_checksum}/download"
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
         end
       end
 
       context 'with an invalid droplet_hash' do
         it 'returns an error' do
           get_and_redirect "/internal/v2/droplets/#{process.guid}/bogus/download"
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
         end
       end
 
       context 'with an invalid app' do
         it 'should return an error' do
           get_and_redirect '/internal/v2/droplets/bad/bogus/download'
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
         end
       end
     end
@@ -167,7 +167,7 @@ module VCAP::CloudController
           upload_droplet
 
           get "/internal/v4/droplets/#{process.guid}/#{process.droplet_checksum}/download"
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(last_response.headers['X-Accel-Redirect']).to match("/cc-droplets/.*/#{process.droplet_hash}")
         end
       end
@@ -179,7 +179,7 @@ module VCAP::CloudController
           upload_droplet
 
           get "/internal/v4/droplets/#{process.guid}/#{process.droplet_checksum}/download"
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(last_response.body).to eq('droplet contents')
         end
       end
@@ -191,28 +191,28 @@ module VCAP::CloudController
 
         it 'raises an error' do
           get "/internal/v4/droplets/#{process.guid}/#{process.droplet_checksum}/download"
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
           expect(decoded_response['description']).to eq("Staging error: droplet not found for #{process.guid}")
         end
 
         it 'fails if blobstore is remote' do
           allow_any_instance_of(CloudController::Blobstore::Client).to receive(:local?).and_return(false)
           get "/internal/v4/droplets/#{process.guid}/#{process.droplet_checksum}/download"
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
         end
       end
 
       context 'with an invalid droplet_hash' do
         it 'returns an error' do
           get "/internal/v4/droplets/#{process.guid}/bogus/download"
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
         end
       end
 
       context 'with an invalid app' do
         it 'should return an error' do
           get '/internal/v4/droplets/bad/bogus/download'
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
         end
       end
 

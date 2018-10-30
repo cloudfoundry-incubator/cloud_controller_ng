@@ -320,7 +320,7 @@ RSpec.describe 'Service Broker API integration' do
 
             get("/v2/service_bindings/#{@binding_id}", '', admin_headers)
 
-            expect(last_response.status).to eq(404)
+            expect(last_response).to have_status_code(404)
           end
         end
 
@@ -335,7 +335,7 @@ RSpec.describe 'Service Broker API integration' do
 
             get("/v2/service_bindings/#{@binding_id}", '', admin_headers)
 
-            expect(last_response.status).to eq(404)
+            expect(last_response).to have_status_code(404)
           end
         end
       end

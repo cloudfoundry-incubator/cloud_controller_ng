@@ -263,7 +263,7 @@ module VCAP::CloudController
 
               hash_body = JSON.parse(last_response.body)
               expect(hash_body['error_code']).to eq('CF-ServiceInstanceNotFound')
-              expect(last_response.status).to eq(404)
+              expect(last_response).to have_status_code(404)
             end
           end
 
@@ -326,7 +326,7 @@ module VCAP::CloudController
 
               it 'returns a ServiceKeyNameTaken error' do
                 make_request
-                expect(last_response.status).to eq(400)
+                expect(last_response).to have_status_code(400)
                 expect(decoded_response['error_code']).to eq('CF-ServiceKeyNameTaken')
               end
 
@@ -537,7 +537,7 @@ module VCAP::CloudController
 
           get "/v2/service_keys/#{service_key.guid}"
 
-          expect(last_response.status).to eq(503)
+          expect(last_response).to have_status_code(503)
           expect(decoded_response['description']).to eq('Credential store is unavailable')
         end
 
@@ -546,7 +546,7 @@ module VCAP::CloudController
 
           get "/v2/service_keys/#{service_key.guid}"
 
-          expect(last_response.status).to eq(503)
+          expect(last_response).to have_status_code(503)
           expect(decoded_response['description']).to eq('The UAA service is currently unavailable')
         end
       end
@@ -806,7 +806,7 @@ module VCAP::CloudController
 
                 it "receives a #{expected_status} http status code" do
                   get "/v2/service_keys/#{service_key.guid}/parameters"
-                  expect(last_response.status).to eq(expected_status)
+                  expect(last_response).to have_status_code(expected_status)
                 end
               end
             end

@@ -45,7 +45,7 @@ module VCAP::CloudController
       it 'returns SecurityGroupInvalid' do
         post '/v2/security_groups', '{"name":"one\ntwo"}'
 
-        expect(last_response.status).to eq(400)
+        expect(last_response).to have_status_code(400)
         expect(decoded_response['description']).to match(/security group is invalid/)
         expect(decoded_response['error_code']).to match(/SecurityGroupInvalid/)
       end
@@ -54,7 +54,7 @@ module VCAP::CloudController
         SecurityGroup.make(name: 'foo')
         post '/v2/security_groups', '{"name":"foo"}'
 
-        expect(last_response.status).to eq(400)
+        expect(last_response).to have_status_code(400)
         expect(decoded_response['description']).to match(/name is taken/)
         expect(decoded_response['error_code']).to match(/SecurityGroupNameTaken/)
       end
@@ -80,7 +80,7 @@ module VCAP::CloudController
         it 'returns SecurityGroupInvalid' do
           post '/v2/security_groups', MultiJson.dump(security_group)
 
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
           expect(decoded_response['description']).to match(/must not exceed #{SecurityGroup::MAX_RULES_CHAR_LENGTH} characters/)
           expect(decoded_response['error_code']).to match(/SecurityGroupInvalid/)
         end

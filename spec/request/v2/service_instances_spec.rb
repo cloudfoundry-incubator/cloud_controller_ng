@@ -155,7 +155,7 @@ RSpec.describe 'ServiceInstances' do
         it 'returns data about the given service instance' do
           get "v2/service_instances/#{service_instance.guid}", nil, admin_headers
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           parsed_response = MultiJson.load(last_response.body)
           expect(parsed_response).to be_a_response_like(
@@ -201,7 +201,7 @@ RSpec.describe 'ServiceInstances' do
         it 'returns service_plan_guid in the response' do
           get "v2/service_instances/#{service_instance.guid}", nil, headers_for(user)
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           parsed_response = MultiJson.load(last_response.body)
           expect(parsed_response).to be_a_response_like(
@@ -245,7 +245,7 @@ RSpec.describe 'ServiceInstances' do
         it 'returns the service_plan_guid in the response' do
           get "v2/service_instances/#{service_instance.guid}", nil, headers_for(user)
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           parsed_response = MultiJson.load(last_response.body)
           expect(parsed_response).to be_a_response_like(
@@ -308,7 +308,7 @@ RSpec.describe 'ServiceInstances' do
       it 'returns all parameters of the service instance' do
         get "v2/service_instances/#{service_instance.guid}/parameters", nil, admin_headers
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
 
         parsed_response = last_response.body
         expect(MultiJson.load(parsed_response)).to be_a_response_like(
@@ -372,7 +372,7 @@ RSpec.describe 'ServiceInstances' do
     it 'returns data about the source space and org' do
       get "v2/service_instances/#{service_instance.guid}/shared_from", nil, admin_headers
 
-      expect(last_response.status).to eq(200), last_response.body
+      expect(last_response).to have_status_code(200), last_response.body
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like({
@@ -400,13 +400,13 @@ RSpec.describe 'ServiceInstances' do
         other_space.add_developer(user)
 
         post "v3/service_instances/#{service_instance.guid}/relationships/shared_spaces", req_body, headers_for(user)
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
       end
 
       it 'returns data about the source space and org' do
         get "v2/service_instances/#{service_instance.guid}/shared_from", nil, headers_for(other_user)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
 
         parsed_response = MultiJson.load(last_response.body)
         expect(parsed_response).to be_a_response_like({
@@ -431,7 +431,7 @@ RSpec.describe 'ServiceInstances' do
     it 'returns data about the source space, org, and bound_app_count' do
       get "v2/service_instances/#{service_instance.guid}/shared_to", nil, admin_headers
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -476,7 +476,7 @@ RSpec.describe 'ServiceInstances' do
       it 'fails with an appropriate response' do
         delete "v2/service_instances/#{service_instance.guid}", nil, admin_headers
 
-        expect(last_response.status).to eq(422)
+        expect(last_response).to have_status_code(422)
 
         parsed_response = MultiJson.load(last_response.body)
         expect(parsed_response['description']).to eq 'Service instances must be unshared before they can be deleted. ' \

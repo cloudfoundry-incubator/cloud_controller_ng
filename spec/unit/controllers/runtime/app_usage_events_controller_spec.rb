@@ -88,7 +88,7 @@ module VCAP::CloudController
         }.to_not change {
           AppUsageEvent.count
         }
-        expect(last_response.status).to eq(403)
+        expect(last_response).to have_status_code(403)
       end
     end
   end

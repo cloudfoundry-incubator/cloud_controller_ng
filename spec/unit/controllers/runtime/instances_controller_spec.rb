@@ -28,7 +28,7 @@ module VCAP::CloudController
 
           get "/v2/apps/#{process.app.guid}/instances"
 
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
 
           parsed_response = MultiJson.load(last_response.body)
           expect(parsed_response['code']).to eq(220001)
@@ -41,7 +41,7 @@ module VCAP::CloudController
 
           get "/v2/apps/#{process.app.guid}/instances"
 
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
           expect(MultiJson.load(last_response.body)['code']).to eq(170001)
         end
 
@@ -51,7 +51,7 @@ module VCAP::CloudController
 
           get "/v2/apps/#{process.app.guid}/instances"
 
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
           expect(MultiJson.load(last_response.body)['code']).to eq(170002)
         end
 
@@ -62,7 +62,7 @@ module VCAP::CloudController
 
           get "/v2/apps/#{process.app.guid}/instances"
 
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
           expect(MultiJson.load(last_response.body)['code']).to eq(170003)
         end
 
@@ -73,7 +73,7 @@ module VCAP::CloudController
 
           get "/v2/apps/#{process.app.guid}/instances"
 
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
           expect(MultiJson.load(last_response.body)['code']).to eq(170004)
         end
 
@@ -84,7 +84,7 @@ module VCAP::CloudController
 
           get "/v2/apps/#{process.app.guid}/instances"
 
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
           expect(MultiJson.load(last_response.body)['code']).to eq(170005)
         end
 
@@ -118,7 +118,7 @@ module VCAP::CloudController
 
             get "/v2/apps/#{process.app.guid}/instances"
 
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             expect(MultiJson.load(last_response.body)).to eq(expected)
             expect(instances_reporters).to have_received(:all_instances_for_app).with(
               satisfy { |requested_app| requested_app.guid == process.app.guid })
@@ -129,7 +129,7 @@ module VCAP::CloudController
       context 'as a non-developer' do
         it 'returns 403' do
           get "/v2/apps/#{process.app.guid}/instances"
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
         end
       end
     end
@@ -147,7 +147,7 @@ module VCAP::CloudController
 
           delete "/v2/apps/#{process.app.guid}/instances/1"
 
-          expect(last_response.status).to eq(204)
+          expect(last_response).to have_status_code(204)
           expect(index_stopper).to have_received(:stop_index).with(process, 1)
         end
       end
@@ -157,7 +157,7 @@ module VCAP::CloudController
 
         it 'returns 403' do
           delete "/v2/apps/#{process.app.guid}/instances/1"
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
         end
       end
     end

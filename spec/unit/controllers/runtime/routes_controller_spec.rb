@@ -85,7 +85,7 @@ module VCAP::CloudController
           it 'associates the route with the app' do
             put "/v2/routes/#{route.guid}/apps/#{docker_process.app.guid}", MultiJson.dump(guid: route.guid)
 
-            expect(last_response.status).to eq(201)
+            expect(last_response).to have_status_code(201)
           end
         end
       end
@@ -270,7 +270,7 @@ module VCAP::CloudController
         it 'returns 400 RouteInvalid' do
           post '/v2/routes', MultiJson.dump(host: 'myexample!*', domain_guid: domain_guid, space_guid: space.guid)
 
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
           expect(decoded_response['code']).to eq(210001)
         end
       end
@@ -292,7 +292,7 @@ module VCAP::CloudController
           it 'returns 400 PathInvalid' do
             post '/v2/routes', MultiJson.dump(host: 'myexample', domain_guid: shared_domain.guid, space_guid: space.guid, path: '/')
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(decoded_response['error_code']).to eq('CF-PathInvalid')
             expect(decoded_response['description']).to eq('The path is invalid: the path cannot be a single slash')
           end
@@ -302,7 +302,7 @@ module VCAP::CloudController
           it 'returns 400 PathInvalid' do
             post '/v2/routes', MultiJson.dump(host: 'myexample', domain_guid: shared_domain.guid, space_guid: space.guid, path: 'a/')
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(decoded_response['error_code']).to eq('CF-PathInvalid')
             expect(decoded_response['description']).to eq('The path is invalid: the path must start with a "/"')
           end
@@ -312,7 +312,7 @@ module VCAP::CloudController
           it 'returns 400 PathInvalid' do
             post '/v2/routes', MultiJson.dump(host: 'myexample', domain_guid: shared_domain.guid, space_guid: space.guid, path: '/v2/zak?')
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(decoded_response['error_code']).to eq('CF-PathInvalid')
             expect(decoded_response['description']).to include('The path is invalid: illegal "?" character')
           end
@@ -323,11 +323,11 @@ module VCAP::CloudController
             taken_host = 'someroute'
             path       = '/%2Fsome%20path'
             post '/v2/routes', MultiJson.dump(host: taken_host, domain_guid: domain_guid, space_guid: space.guid, path: path)
-            expect(last_response.status).to eq(201)
+            expect(last_response).to have_status_code(201)
 
             post '/v2/routes', MultiJson.dump(host: taken_host, domain_guid: domain_guid, space_guid: space.guid, path: path)
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(decoded_response['code']).to eq(210004)
           end
         end
@@ -407,7 +407,7 @@ module VCAP::CloudController
                                               domain_guid: private_domain.guid,
                                               space_guid: space.guid)
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(decoded_response['error_code']).to eq('CF-RouteInvalid')
             expect(decoded_response['description']).to eq('The route is invalid: Port is supported for domains of TCP router groups only.')
           end
@@ -421,7 +421,7 @@ module VCAP::CloudController
           it 'returns RouteInvalid' do
             post '/v2/routes', MultiJson.dump(domain_guid: internal_domain.guid, space_guid: space.guid, path: '/v2/zak', host: 'my-host')
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(last_response.body).to include('Path is not supported for internal domains.')
           end
         end
@@ -434,7 +434,7 @@ module VCAP::CloudController
           it 'returns RouteInvalid' do
             post '/v2/routes', MultiJson.dump(domain_guid: internal_domain.guid, space_guid: space.guid, host: '*')
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(last_response.body).to include('Wild card host names are not supported for internal domains.')
           end
         end
@@ -457,7 +457,7 @@ module VCAP::CloudController
                                               space_guid:  space.guid,
                                               port: taken_port)
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(decoded_response['code']).to eq(210005)
             expect(decoded_response['error_code']).to eq('CF-RoutePortTaken')
           end
@@ -542,7 +542,7 @@ module VCAP::CloudController
               it 'successfully generates a port without warning' do
                 post '/v2/routes?generate_port=true', MultiJson.dump(req), headers_for(user)
 
-                expect(last_response.status).to eq(201)
+                expect(last_response).to have_status_code(201)
                 expect(last_response.body).to include("\"port\": #{generated_port}")
                 expect(last_response.headers).not_to include('X-CF-Warnings')
               end
@@ -558,7 +558,7 @@ module VCAP::CloudController
               it 'creates a route with a generated random port with a warning' do
                 post '/v2/routes?generate_port=true', MultiJson.dump(req), headers_for(user)
 
-                expect(last_response.status).to eq(201)
+                expect(last_response).to have_status_code(201)
                 expect(last_response.body).to include("\"port\": #{generated_port}")
                 expect(last_response.headers).to include('X-Cf-Warnings')
                 expect(last_response.headers['X-Cf-Warnings']).to include(port_override_warning)
@@ -580,7 +580,7 @@ module VCAP::CloudController
               it 'generates a different port and creates the route' do
                 post '/v2/routes?generate_port=true', MultiJson.dump(req), headers_for(user)
 
-                expect(last_response.status).to eq(201)
+                expect(last_response).to have_status_code(201)
                 expect(last_response.body).to include("\"port\": #{generated_port + 1}")
                 expect(last_response.headers).not_to include('X-Cf-Warnings')
               end
@@ -591,7 +591,7 @@ module VCAP::CloudController
             it 'returns a 400' do
               post '/v2/routes?generate_port=lol', MultiJson.dump(req), headers_for(user)
 
-              expect(last_response.status).to eq(400)
+              expect(last_response).to have_status_code(400)
             end
           end
 
@@ -622,7 +622,7 @@ module VCAP::CloudController
             it 'returns 403' do
               post '/v2/routes?generate_port=true', MultiJson.dump(req), headers_for(user)
 
-              expect(last_response.status).to eq(403)
+              expect(last_response).to have_status_code(403)
               expect(decoded_response['error_code']).to eq('CF-OutOfRouterGroupPorts')
               expect(decoded_response['description']).to eq('There are no more ports available for router group: TCP3. Please contact your administrator for more information.')
             end
@@ -635,7 +635,7 @@ module VCAP::CloudController
               post '/v2/routes?generate_port=true', MultiJson.dump(domain_guid: shared_http_domain.guid, space_guid: space.guid)
 
               expect(decoded_response['error_code']).to eq('CF-RouteInvalid')
-              expect(last_response.status).to eq(400)
+              expect(last_response).to have_status_code(400)
               expect(decoded_response['error_code']).to eq('CF-RouteInvalid')
               expect(last_response.body).to include('Port is supported for domains of TCP router groups only.')
             end
@@ -661,7 +661,7 @@ module VCAP::CloudController
             it 'returns RouteInvalid' do
               post '/v2/routes?generate_port=true', MultiJson.dump(domain_guid: private_domain.guid, space_guid: space.guid)
 
-              expect(last_response.status).to eq(400)
+              expect(last_response).to have_status_code(400)
               expect(decoded_response['error_code']).to eq('CF-RouteInvalid')
               expect(decoded_response['description']).to eq('The route is invalid: Port is supported for domains of TCP router groups only.')
             end
@@ -674,7 +674,7 @@ module VCAP::CloudController
               it 'creates a route with the requested port' do
                 post '/v2/routes?generate_port=false', MultiJson.dump(req), headers_for(user)
 
-                expect(last_response.status).to eq(201)
+                expect(last_response).to have_status_code(201)
                 expect(last_response.body).to include("\"port\": #{port}")
               end
             end
@@ -691,7 +691,7 @@ module VCAP::CloudController
 
             post '/v2/routes', MultiJson.dump(host: 'myexample', domain_guid: shared_domain.guid, space_guid: space.guid)
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(decoded_response['code']).to eq(310005)
             expect(decoded_response['error_code']).to eq('CF-SpaceQuotaTotalRoutesExceeded')
           end
@@ -706,7 +706,7 @@ module VCAP::CloudController
 
             post '/v2/routes', MultiJson.dump(host: 'myexample', domain_guid: shared_domain.guid, space_guid: space.guid)
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(decoded_response['code']).to eq(310006)
           end
         end
@@ -721,7 +721,7 @@ module VCAP::CloudController
 
             post '/v2/routes', MultiJson.dump(domain_guid: tcp_domain.guid, space_guid: space.guid, port: 1234)
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(last_response.body).to include 'You have exceeded the total reserved route ports for your organization\'s quota.'
             expect(decoded_response['code']).to eq(310009)
           end
@@ -753,7 +753,7 @@ module VCAP::CloudController
         it 'returns FeatureDisabled for users' do
           post '/v2/routes', MultiJson.dump(req)
 
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
           expect(decoded_response['error_code']).to eq('CF-FeatureDisabled')
           expect(decoded_response['description']).to eq('Feature Disabled: route_creation')
         end
@@ -911,7 +911,7 @@ module VCAP::CloudController
           allow(queryer).to receive(:readable_route_guids).and_return([first_route.guid])
 
           get 'v2/routes'
-          expect(last_response.status).to eq(200), last_response.body
+          expect(last_response).to have_status_code(200), last_response.body
 
           expect(decoded_response['resources'].length).to eq(1)
           expect(decoded_response['resources'][0]['entity']['route_mappings_url']).
@@ -926,7 +926,7 @@ module VCAP::CloudController
           it 'Return Resource length zero' do
             allow(queryer).to receive(:readable_route_guids).and_return([first_route.guid])
             get 'v2/routes?q=organization_guid:notpresent'
-            expect(last_response.status).to eq(200), last_response.body
+            expect(last_response).to have_status_code(200), last_response.body
             expect(decoded_response['resources'].length).to eq(0)
           end
         end
@@ -951,7 +951,7 @@ module VCAP::CloudController
 
             get "v2/routes?q=domain_guid:#{domain_guid}&q=organization_guid:#{org_guid}"
 
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             expect(decoded_response['resources'].length).to eq(1)
             expect(first_route_info.fetch('metadata').fetch('guid')).to eq(route_guid)
           end
@@ -966,7 +966,7 @@ module VCAP::CloudController
 
             get "v2/routes?q=host:#{taken_host}&q=organization_guid:#{org_guid}&q=domain_guid:#{domain_guid}"
 
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             expect(decoded_response['resources'].length).to eq(1)
             expect(first_route_info.fetch('metadata').fetch('guid')).to eq(route_guid)
           end
@@ -979,7 +979,7 @@ module VCAP::CloudController
 
             get "v2/routes?q=organization_guid:#{org_guid}"
 
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             expect(decoded_response['resources'].length).to eq(2)
             expect(first_route_info.fetch('metadata').fetch('guid')).to eq(route_guid)
             expect(second_route_info.fetch('metadata').fetch('guid')).to eq(route1_guid)
@@ -997,7 +997,7 @@ module VCAP::CloudController
 
             get "v2/routes?q=organization_guid%20IN%20#{org_guid},#{org2_guid}"
 
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             expect(decoded_response['resources'].length).to eq(3)
             expect(first_route_info.fetch('metadata').fetch('guid')).to eq(route_guid)
             expect(second_route_info.fetch('metadata').fetch('guid')).to eq(route1_guid)
@@ -1015,7 +1015,7 @@ module VCAP::CloudController
 
               get "v2/routes?q=organization_guid:#{org_guid}"
 
-              expect(last_response.status).to eq(200)
+              expect(last_response).to have_status_code(200)
               expect(decoded_response['resources'].length).to eq(1)
               expect(first_route_info.fetch('metadata').fetch('guid')).to eq(route_guid)
             end
@@ -1040,7 +1040,7 @@ module VCAP::CloudController
               let(:page) { 1 }
               it 'passes the org_guid filter into the next_url' do
                 get "v2/routes?page=#{page}&results-per-page=#{results_per_page}&q=organization_guid:#{org1.guid}"
-                expect(last_response.status).to eq(200), last_response.body
+                expect(last_response).to have_status_code(200), last_response.body
                 routes = decoded_response['resources'].map { |resource| resource.fetch('metadata').fetch('guid') }
                 expect(routes.length).to eq(1)
                 expect(routes).to include(instances[0].guid)
@@ -1054,7 +1054,7 @@ module VCAP::CloudController
               let(:page) { 2 }
               it 'passes the org_guid filter into the next_url' do
                 get "v2/routes?page=#{page}&results-per-page=#{results_per_page}&q=organization_guid:#{org1.guid}"
-                expect(last_response.status).to eq(200), last_response.body
+                expect(last_response).to have_status_code(200), last_response.body
                 routes = decoded_response['resources'].map { |resource| resource.fetch('metadata').fetch('guid') }
                 expect(routes.length).to eq(1)
                 expect(routes).to include(instances[1].guid)
@@ -1068,7 +1068,7 @@ module VCAP::CloudController
               let(:page) { 3 }
               it 'passes the org_guid filter into the next_url' do
                 get "v2/routes?page=#{page}&results-per-page=#{results_per_page}&q=organization_guid:#{org1.guid}"
-                expect(last_response.status).to eq(200), last_response.body
+                expect(last_response).to have_status_code(200), last_response.body
                 routes = decoded_response['resources'].map { |resource| resource.fetch('metadata').fetch('guid') }
                 expect(routes.length).to eq(0)
                 result = JSON.parse(last_response.body)
@@ -1087,7 +1087,7 @@ module VCAP::CloudController
 
         it 'should return all the routes' do
           get 'v2/routes'
-          expect(last_response.status).to eq(200), last_response.body
+          expect(last_response).to have_status_code(200), last_response.body
 
           expect(decoded_response['resources'].length).to eq(2)
           expect(decoded_response['resources'][0]['metadata']['guid']).to eq(first_route.guid)
@@ -1101,7 +1101,7 @@ module VCAP::CloudController
 
           get 'v2/routes'
 
-          expect(last_response.status).to eq(200), last_response.body
+          expect(last_response).to have_status_code(200), last_response.body
 
           expect(decoded_response['resources'].length).to eq(1)
           expect(decoded_response['resources'][0]['metadata']['guid']).to eq(second_route.guid)
@@ -1126,7 +1126,7 @@ module VCAP::CloudController
       context 'when the domain does not exist' do
         it 'returns a NOT_FOUND (404)' do
           get '/v2/routes/reserved/domain/nothere/host/myhost'
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
         end
       end
 
@@ -1136,14 +1136,14 @@ module VCAP::CloudController
         context 'when the hostname is not reserved' do
           it 'returns a NOT_FOUND (404)' do
             get "/v2/routes/reserved/domain/#{route.domain_guid}/host/myhost"
-            expect(last_response.status).to eq(404)
+            expect(last_response).to have_status_code(404)
           end
         end
 
         context 'when the hostname is reserved' do
           it 'returns a NO_CONTENT (204)' do
             get "/v2/routes/reserved/domain/#{route.domain_guid}/host/#{route.host}"
-            expect(last_response.status).to eq(204)
+            expect(last_response).to have_status_code(204)
           end
         end
 
@@ -1151,7 +1151,7 @@ module VCAP::CloudController
           context 'when the path does not exist' do
             it 'returns a NOT_FOUND (404)' do
               get "/v2/routes/reserved/domain/#{route.domain_guid}/host/#{route.host}?path=not_mypath"
-              expect(last_response.status).to eq(404)
+              expect(last_response).to have_status_code(404)
             end
           end
 
@@ -1162,7 +1162,7 @@ module VCAP::CloudController
 
               it 'returns a NO_CONTENT (204)' do
                 get "/v2/routes/reserved/domain/#{route.domain_guid}/host/#{route.host}?path=#{path}"
-                expect(last_response.status).to eq(204)
+                expect(last_response).to have_status_code(204)
               end
             end
 
@@ -1173,7 +1173,7 @@ module VCAP::CloudController
               it 'returns a NO_CONTENT' do
                 uri_encoded_path = '%2Fmy%2520path'
                 get "/v2/routes/reserved/domain/#{route.domain_guid}/host/#{route.host}?path=#{uri_encoded_path}"
-                expect(last_response.status).to eq(204)
+                expect(last_response).to have_status_code(204)
               end
             end
           end
@@ -1262,7 +1262,7 @@ module VCAP::CloudController
           context 'when the path does not exist' do
             it 'returns a NOT_FOUND (404)' do
               get "/v2/routes/reserved/domain/#{route.domain_guid}?host=#{route.host}&path=not_mypath"
-              expect(last_response.status).to eq(404)
+              expect(last_response).to have_status_code(404)
             end
           end
 
@@ -1273,7 +1273,7 @@ module VCAP::CloudController
 
               it 'returns a NO_CONTENT (204)' do
                 get "/v2/routes/reserved/domain/#{route.domain_guid}?host=#{route.host}&path=#{path}"
-                expect(last_response.status).to eq(204)
+                expect(last_response).to have_status_code(204)
               end
             end
 
@@ -1284,7 +1284,7 @@ module VCAP::CloudController
               it 'returns a NO_CONTENT' do
                 uri_encoded_path = '%2Fmy%2520path'
                 get "/v2/routes/reserved/domain/#{route.domain_guid}?host=#{route.host}&path=#{uri_encoded_path}"
-                expect(last_response.status).to eq(204)
+                expect(last_response).to have_status_code(204)
               end
             end
           end
@@ -1331,7 +1331,7 @@ module VCAP::CloudController
           get "/v2/routes/#{route.guid}/apps"
 
           expect(queryer).to have_received(:can_read_globally?)
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(decoded_response['resources'].length).to eq(2)
           expect(decoded_response['resources'][0]['metadata']['guid']).to eq process1.app.guid
           expect(decoded_response['resources'][1]['metadata']['guid']).to eq process2.app.guid
@@ -1342,7 +1342,7 @@ module VCAP::CloudController
 
           get "/v2/routes/#{route.guid}/apps"
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(decoded_response['resources'].length).to eq(1)
           expect(decoded_response['resources'][0]['metadata']['guid']).to eq process2.app.guid
         end
@@ -1371,7 +1371,7 @@ module VCAP::CloudController
           get "/v2/routes/#{route.guid}/route_mappings"
 
           expect(queryer).to have_received(:can_read_globally?)
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(decoded_response['resources'].length).to eq(2)
           expect(decoded_response['resources'][0]['metadata']['guid']).to eq route_mapping1.guid
           expect(decoded_response['resources'][1]['metadata']['guid']).to eq route_mapping2.guid
@@ -1382,7 +1382,7 @@ module VCAP::CloudController
 
           get "/v2/routes/#{route.guid}/route_mappings"
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(decoded_response['resources'].length).to eq(1)
           expect(decoded_response['resources'][0]['metadata']['guid']).to eq route_mapping2.guid
         end
@@ -1402,7 +1402,7 @@ module VCAP::CloudController
         expect(route.reload.apps).to be_empty
 
         put "/v2/routes/#{route.guid}/apps/#{process.app.guid}", nil
-        expect(last_response.status).to eq(201)
+        expect(last_response).to have_status_code(201)
 
         expect(route.reload.apps).to match_array([process])
 
@@ -1418,7 +1418,7 @@ module VCAP::CloudController
           expect(route.reload.apps).to be_empty
 
           put "/v2/routes/not-a-route/apps/#{process.app.guid}", nil
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
           expect(last_response.body).to include('RouteNotFound')
 
           expect(route.reload.apps).to be_empty
@@ -1430,7 +1430,7 @@ module VCAP::CloudController
           expect(route.reload.apps).to be_empty
 
           put "/v2/routes/#{route.guid}/apps/not-an-app", nil
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
           expect(last_response.body).to include('AppNotFound')
 
           expect(route.reload.apps).to be_empty
@@ -1446,7 +1446,7 @@ module VCAP::CloudController
           expect(route.reload.apps).to be_empty
 
           put "/v2/routes/#{route.guid}/apps/#{process.app.guid}", nil
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
 
           expect(route.reload.apps).to be_empty
         end
@@ -1461,7 +1461,7 @@ module VCAP::CloudController
           expect(route.reload.apps).to match_array([process])
 
           put "/v2/routes/#{route.guid}/apps/#{process.app.guid}", nil
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
 
           expect(route.reload.apps).to match_array([process])
         end
@@ -1474,7 +1474,7 @@ module VCAP::CloudController
           expect(route.reload.apps).to be_empty
 
           put "/v2/routes/#{route.guid}/apps/#{process.app.guid}", nil
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
           expect(decoded_response['description']).to match(/The requested app relation is invalid: the app and route must belong to the same space/)
 
           expect(route.reload.apps).to be_empty
@@ -1486,7 +1486,7 @@ module VCAP::CloudController
 
         it 'uses the first port for the app as the app_port' do
           put "/v2/routes/#{route.guid}/apps/#{process.app.guid}", nil
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
 
           mapping = RouteMappingModel.last
           expect(mapping.app_port).to eq(9797)
@@ -1501,7 +1501,7 @@ module VCAP::CloudController
           expect(route.reload.apps).to be_empty
 
           put "/v2/routes/#{route.guid}/apps/#{process.app.guid}", nil
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
 
           expect(route.reload.apps).to match_array([process])
 
@@ -1541,7 +1541,7 @@ module VCAP::CloudController
         expect(route.reload.apps).to match_array([process])
 
         delete "/v2/routes/#{route.guid}/apps/#{process.app.guid}"
-        expect(last_response.status).to eq(204)
+        expect(last_response).to have_status_code(204)
 
         expect(route.reload.apps).to be_empty
         expect(route_mapping.exists?).to be_falsey
@@ -1550,7 +1550,7 @@ module VCAP::CloudController
       context 'when the route does not exist' do
         it 'returns a 404' do
           delete "/v2/routes/bogus-guid/apps/#{process.app.guid}"
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
           expect(last_response.body).to include('RouteNotFound')
         end
       end
@@ -1558,7 +1558,7 @@ module VCAP::CloudController
       context 'when the app does not exist' do
         it 'returns a 404' do
           delete "/v2/routes/#{route.guid}/apps/whoops"
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
           expect(last_response.body).to include('AppNotFound')
         end
       end
@@ -1570,7 +1570,7 @@ module VCAP::CloudController
           expect(route.reload.apps).to match_array([])
 
           delete "/v2/routes/#{route.guid}/apps/#{process.app.guid}"
-          expect(last_response.status).to eq(204)
+          expect(last_response).to have_status_code(204)
 
           expect(route.reload.apps).to be_empty
           expect(route_mapping.exists?).to be_falsey

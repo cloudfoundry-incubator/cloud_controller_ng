@@ -246,7 +246,7 @@ module VCAP::CloudController
 
             hash_body = JSON.parse(last_response.body)
             expect(hash_body['error_code']).to eq('CF-AppNotFound')
-            expect(last_response.status).to eq(404)
+            expect(last_response).to have_status_code(404)
           end
 
           context 'because it maps to non-web process' do
@@ -257,7 +257,7 @@ module VCAP::CloudController
 
               hash_body = JSON.parse(last_response.body)
               expect(hash_body['error_code']).to eq('CF-AppNotFound')
-              expect(last_response.status).to eq(404)
+              expect(last_response).to have_status_code(404)
             end
           end
         end
@@ -275,7 +275,7 @@ module VCAP::CloudController
 
             hash_body = JSON.parse(last_response.body)
             expect(hash_body['error_code']).to eq('CF-ServiceInstanceNotFound')
-            expect(last_response.status).to eq(404)
+            expect(last_response).to have_status_code(404)
           end
         end
 
@@ -293,7 +293,7 @@ module VCAP::CloudController
 
           it 'returns 403' do
             post '/v2/service_bindings', req
-            expect(last_response.status).to eq(403)
+            expect(last_response).to have_status_code(403)
           end
         end
 
@@ -304,7 +304,7 @@ module VCAP::CloudController
 
           it 'returns a ServiceBindingAppServiceTaken error' do
             post '/v2/service_bindings', req.to_json
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(decoded_response['error_code']).to eq('CF-ServiceBindingAppServiceTaken')
           end
         end
@@ -451,7 +451,7 @@ module VCAP::CloudController
                   it 'returns a ServiceBindingAppServiceTaken error' do
                     post '/v2/service_bindings?accepts_incomplete=true', req.to_json
 
-                    expect(last_response.status).to eq(400)
+                    expect(last_response).to have_status_code(400)
                     expect(decoded_response['error_code']).to eq('CF-ServiceBindingAppServiceTaken')
                     expect(decoded_response['description']).to eq('The app is already bound to the service.')
                   end
@@ -657,7 +657,7 @@ module VCAP::CloudController
 
             hash_body = JSON.parse(last_response.body)
             expect(hash_body['error_code']).to eq('CF-VolumeMountServiceDisabled')
-            expect(last_response.status).to eq(403)
+            expect(last_response).to have_status_code(403)
           end
         end
 
@@ -1220,7 +1220,7 @@ module VCAP::CloudController
           ServiceBinding.make(service_instance: managed_service_instance, app: process3.app, name: 'potato')
 
           get '/v2/service_bindings?inline-relations-depth=1&q=name:3-ring'
-          expect(last_response.status).to eq(200), last_response.body
+          expect(last_response).to have_status_code(200), last_response.body
           service_bindings = decoded_response['resources']
           expect(service_bindings.size).to eq(1)
           entity = service_bindings[0]['entity']
@@ -1229,7 +1229,7 @@ module VCAP::CloudController
           expect(entity['name']).to eq('3-ring')
 
           get '/v2/service_bindings?q=name:potato'
-          expect(last_response.status).to eq(200), last_response.body
+          expect(last_response).to have_status_code(200), last_response.body
           expect(decoded_response['prev_url']).to be_nil
           expect(decoded_response['next_url']).to be_nil
           service_bindings = decoded_response['resources']
@@ -1251,7 +1251,7 @@ module VCAP::CloudController
           it 'can set the next_url and prev_url links' do
             get '/v2/service_bindings?results-per-page=2&page=1&q=name:potato'
 
-            expect(last_response.status).to eq(200), last_response.body
+            expect(last_response).to have_status_code(200), last_response.body
             expect(decoded_response['prev_url']).to be(nil)
             next_url = decoded_response['next_url']
             expect(next_url).to match(%r{^/v2/service_bindings\?(?=.*page=2).*q=name:potato})
@@ -1266,7 +1266,7 @@ module VCAP::CloudController
 
             get next_url
 
-            expect(last_response.status).to eq(200), last_response.body
+            expect(last_response).to have_status_code(200), last_response.body
             expect(decoded_response['prev_url']).to match(/(?=.*?page=1\b).*q=name:potato/)
             next_url = decoded_response['next_url']
             expect(next_url).to match(/(?=.*?page=3).*q=name:potato/)
@@ -1281,7 +1281,7 @@ module VCAP::CloudController
 
             get next_url
 
-            expect(last_response.status).to eq(200), last_response.body
+            expect(last_response).to have_status_code(200), last_response.body
             expect(decoded_response['prev_url']).to match(/(?=.*?page=2\b).*q=name:potato/)
             expect(decoded_response['next_url']).to be_nil
             service_bindings = decoded_response['resources']
@@ -1295,7 +1295,7 @@ module VCAP::CloudController
 
             get '/v2/service_bindings?results-per-page=2&page=1&q=name:3-ring'
 
-            expect(last_response.status).to eq(200), last_response.body
+            expect(last_response).to have_status_code(200), last_response.body
             expect(decoded_response['prev_url']).to be_nil
             expect(decoded_response['next_url']).to be_nil
             service_bindings = decoded_response['resources']
@@ -1333,7 +1333,7 @@ module VCAP::CloudController
               name: '3-ring',
             }
             post '/v2/service_bindings', req.to_json
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(decoded_response['description']).to eq('VCAP::CloudController::ServiceBindingCreate::SpaceMismatch')
             expect(decoded_response['error_code']).to eq('CF-ServiceBindingAppServiceTaken')
           end
@@ -1347,7 +1347,7 @@ module VCAP::CloudController
           it 'developer1 can see only bindings in space1' do
             set_current_user(developer1)
             get '/v2/service_bindings?q=name:binding'
-            expect(last_response.status).to eq(200), last_response.body
+            expect(last_response).to have_status_code(200), last_response.body
             service_bindings = decoded_response['resources']
             expect(service_bindings.size).to eq(1)
             entity = service_bindings[0]['entity']
@@ -1359,7 +1359,7 @@ module VCAP::CloudController
           it 'developer2 can see only bindings in space2' do
             set_current_user(developer2)
             get '/v2/service_bindings?q=name:binding'
-            expect(last_response.status).to eq(200), last_response.body
+            expect(last_response).to have_status_code(200), last_response.body
             service_bindings = decoded_response['resources']
             expect(service_bindings.size).to eq(1)
             entity = service_bindings[0]['entity']
@@ -1589,7 +1589,7 @@ module VCAP::CloudController
 
                 it "receives a #{expected_status} http status code" do
                   get "/v2/service_bindings/#{binding.guid}/parameters"
-                  expect(last_response.status).to eq(expected_status)
+                  expect(last_response).to have_status_code(expected_status)
                 end
               end
             end

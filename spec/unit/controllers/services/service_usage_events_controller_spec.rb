@@ -166,7 +166,7 @@ module VCAP::CloudController
         it 'returns 403' do
           set_current_user(User.make)
           get '/v2/service_usage_events'
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
         end
       end
     end
@@ -184,7 +184,7 @@ module VCAP::CloudController
         set_current_user(User.make)
         url = "/v2/service_usage_events/#{event_guid1}"
         get url
-        expect(last_response.status).to eq(403)
+        expect(last_response).to have_status_code(403)
       end
     end
 
@@ -221,7 +221,7 @@ module VCAP::CloudController
           ServiceUsageEvent.count
         }
 
-        expect(last_response.status).to eq(403)
+        expect(last_response).to have_status_code(403)
       end
     end
   end

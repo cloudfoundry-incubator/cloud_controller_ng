@@ -54,7 +54,7 @@ RSpec.describe 'Service Broker API integration' do
           end
 
           it 'handles the free field on service plans' do
-            expect(last_response.status).to eq(201)
+            expect(last_response).to have_status_code(201)
           end
         end
 
@@ -71,7 +71,7 @@ RSpec.describe 'Service Broker API integration' do
           end
 
           it 'handles the free field on service plans' do
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
           end
         end
       end

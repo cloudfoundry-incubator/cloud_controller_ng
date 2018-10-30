@@ -31,7 +31,7 @@ RSpec.describe 'Deployments' do
 
       it 'should create a deployment object using the current droplet from the app' do
         post '/v3/deployments', create_request.to_json, user_header
-        expect(last_response.status).to eq(201)
+        expect(last_response).to have_status_code(201)
 
         deployment = VCAP::CloudController::DeploymentModel.last
 
@@ -88,7 +88,7 @@ RSpec.describe 'Deployments' do
 
       it 'creates a deployment object with that droplet' do
         post '/v3/deployments', create_request.to_json, user_header
-        expect(last_response.status).to eq(201)
+        expect(last_response).to have_status_code(201)
         parsed_response = MultiJson.load(last_response.body)
 
         deployment = VCAP::CloudController::DeploymentModel.last
@@ -140,7 +140,7 @@ RSpec.describe 'Deployments' do
       )
 
       get "/v3/deployments/#{deployment.guid}", nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like({
@@ -210,7 +210,7 @@ RSpec.describe 'Deployments' do
 
       it 'should list all deployments' do
         get '/v3/deployments?per_page=2', nil, admin_user_header
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
 
         parsed_response = MultiJson.load(last_response.body)
         expect(parsed_response).to be_a_response_like({
@@ -306,7 +306,7 @@ RSpec.describe 'Deployments' do
 
       it 'should not include the deployments in the other space' do
         get '/v3/deployments', nil, user_header
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
 
         parsed_response = MultiJson.load(last_response.body)
         expect(parsed_response).to be_a_response_like({
@@ -373,7 +373,7 @@ RSpec.describe 'Deployments' do
         )
 
         post "/v3/deployments/#{deployment.guid}/actions/cancel", {}.to_json, user_header
-        expect(last_response.status).to eq(200), last_response.body
+        expect(last_response).to have_status_code(200), last_response.body
 
         expect(last_response.body).to be_empty
         expect(deployment.reload.state).to eq('CANCELING')

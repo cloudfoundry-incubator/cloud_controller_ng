@@ -20,7 +20,7 @@ RSpec.describe 'SharedDomains' do
     it 'lists all shared domains' do
       get '/v2/shared_domains', nil, headers_for(user)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -83,7 +83,7 @@ RSpec.describe 'SharedDomains' do
 
     it 'shows the shared domain' do
       get "/v2/shared_domains/#{domain.guid}", nil, headers_for(user)
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -202,7 +202,7 @@ RSpec.describe 'SharedDomains' do
     it 'ignores everything and returns the original object, suckers!' do
       put "/v2/shared_domains/#{domain.guid}", '{"name": "meow.com", "route_group_guid": "a-guid"}', admin_headers_for(user)
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
       parsed_response = MultiJson.load(last_response.body)
 
       expect(parsed_response).to be_a_response_like({

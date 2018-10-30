@@ -24,7 +24,7 @@ RSpec.describe 'Route Mappings' do
 
       post '/v3/route_mappings', body.to_json, developer_headers
 
-      expect(last_response.status).to eq(201), last_response.body
+      expect(last_response).to have_status_code(201), last_response.body
       route_mapping = VCAP::CloudController::RouteMappingModel.last
 
       expected_response = {
@@ -89,7 +89,7 @@ RSpec.describe 'Route Mappings' do
 
       patch "/v3/route_mappings/#{route_mapping.guid}", body.to_json, developer_headers
 
-      expect(last_response.status).to eq(201), last_response.body
+      expect(last_response).to have_status_code(201), last_response.body
 
       expected_response = {
           'guid'       => route_mapping.guid,
@@ -169,7 +169,7 @@ RSpec.describe 'Route Mappings' do
       parsed_response = MultiJson.load(last_response.body)
 
       # verify response
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
 
@@ -194,7 +194,7 @@ RSpec.describe 'Route Mappings' do
           parsed_response = MultiJson.load(last_response.body)
           returned_guids  = parsed_response['resources'].map { |i| i['guid'] }
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(parsed_response['pagination']).to be_a_response_like(expected_pagination)
           expect(returned_guids).to match_array(expected_guids)
         end
@@ -219,7 +219,7 @@ RSpec.describe 'Route Mappings' do
 
           parsed_response = MultiJson.load(last_response.body)
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           returned_guids = parsed_response['resources'].map { |i| i['guid'] }
           expect(parsed_response['pagination']).to be_a_response_like(expected_pagination)
           expect(returned_guids).to match_array(expected_guids)
@@ -251,7 +251,7 @@ RSpec.describe 'Route Mappings' do
       parsed_response = MultiJson.load(last_response.body)
 
       # verify response
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
   end
@@ -263,7 +263,7 @@ RSpec.describe 'Route Mappings' do
       delete "/v3/route_mappings/#{route_mapping.guid}", nil, developer_headers
 
       # verify response
-      expect(last_response.status).to eq(204)
+      expect(last_response).to have_status_code(204)
       expect(route_mapping.exists?).to be_falsey
 
       # verify audit event
@@ -337,7 +337,7 @@ RSpec.describe 'Route Mappings' do
       parsed_response = MultiJson.load(last_response.body)
 
       # verify response
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
 
@@ -362,7 +362,7 @@ RSpec.describe 'Route Mappings' do
 
           parsed_response = MultiJson.load(last_response.body)
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           returned_guids = parsed_response['resources'].map { |i| i['guid'] }
           expect(parsed_response['pagination']).to be_a_response_like(expected_pagination)
           expect(returned_guids).to match_array(expected_guids)

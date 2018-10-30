@@ -135,12 +135,12 @@ module VCAP::CloudController
 
       it 'allows the user' do
         get "/v2/users/#{user.guid}/organizations"
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
       end
 
       it 'disallows a different user' do
         get "/v2/users/#{mgr.guid}/organizations"
-        expect(last_response.status).to eq(403)
+        expect(last_response).to have_status_code(403)
       end
     end
 
@@ -169,7 +169,7 @@ module VCAP::CloudController
 
           it 'succeeds and creates an appropriate audit event' do
             put "/v2/users/#{other_user.guid}/audited_organizations/#{org.guid}"
-            expect(last_response.status).to eq(201)
+            expect(last_response).to have_status_code(201)
 
             event = Event.find(type: event_type, actee: other_user.guid)
             expect(event).not_to be_nil
@@ -183,7 +183,7 @@ module VCAP::CloudController
 
           it 'fails and does not create an audit event' do
             put "/v2/users/#{other_user.guid}/audited_organizations/#{org.guid}"
-            expect(last_response.status).to eq(403)
+            expect(last_response).to have_status_code(403)
 
             event = Event.find(type: event_type, actee: other_user.guid)
             expect(event).to be_nil
@@ -206,7 +206,7 @@ module VCAP::CloudController
 
           it 'succeeds and creates an appropriate audit event' do
             put "/v2/users/#{other_user.guid}/managed_organizations/#{org.guid}"
-            expect(last_response.status).to eq(201)
+            expect(last_response).to have_status_code(201)
 
             event = Event.find(type: event_type, actee: other_user.guid)
             expect(event).not_to be_nil
@@ -220,7 +220,7 @@ module VCAP::CloudController
 
           it 'fails and does not create an audit event' do
             put "/v2/users/#{other_user.guid}/managed_organizations/#{org.guid}"
-            expect(last_response.status).to eq(403)
+            expect(last_response).to have_status_code(403)
 
             event = Event.find(type: event_type, actee: other_user.guid)
             expect(event).to be_nil
@@ -243,7 +243,7 @@ module VCAP::CloudController
 
           it 'succeeds and creates an appropriate audit event' do
             put "/v2/users/#{other_user.guid}/billing_managed_organizations/#{org.guid}"
-            expect(last_response.status).to eq(201)
+            expect(last_response).to have_status_code(201)
 
             event = Event.find(type: event_type, actee: other_user.guid)
             expect(event).not_to be_nil
@@ -257,7 +257,7 @@ module VCAP::CloudController
 
           it 'fails and does not create an audit event' do
             put "/v2/users/#{other_user.guid}/billing_managed_organizations/#{org.guid}"
-            expect(last_response.status).to eq(403)
+            expect(last_response).to have_status_code(403)
 
             event = Event.find(type: event_type, actee: other_user.guid)
             expect(event).to be_nil
@@ -279,7 +279,7 @@ module VCAP::CloudController
 
           it 'succeeds and creates an appropriate audit event' do
             put "/v2/users/#{other_user.guid}/organizations/#{org.guid}"
-            expect(last_response.status).to eq(201)
+            expect(last_response).to have_status_code(201)
 
             event = Event.find(type: event_type, actee: other_user.guid)
             expect(event).not_to be_nil
@@ -292,7 +292,7 @@ module VCAP::CloudController
           end
           it 'fails and does not create an audit event' do
             put "/v2/users/#{other_user.guid}/organizations/#{org.guid}"
-            expect(last_response.status).to eq(403)
+            expect(last_response).to have_status_code(403)
 
             event = Event.find(type: event_type, actee: other_user.guid)
             expect(event).to be_nil
@@ -315,7 +315,7 @@ module VCAP::CloudController
       context 'when acting on behalf of the current user' do
         it 'succeeds' do
           delete "/v2/users/#{user.guid}/audited_organizations/#{org.guid}"
-          expect(last_response.status).to eq(204)
+          expect(last_response).to have_status_code(204)
         end
 
         it 'creates an appropriate event' do
@@ -334,7 +334,7 @@ module VCAP::CloudController
 
         it 'fails with 403' do
           delete "/v2/users/#{other_user.guid}/audited_organizations/#{org.guid}"
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
           expect(decoded_response['code']).to eq(10003)
         end
       end
@@ -350,7 +350,7 @@ module VCAP::CloudController
 
           it 'succeeds' do
             delete "/v2/users/#{other_user.guid}/audited_organizations/#{org.guid}"
-            expect(last_response.status).to eq(204)
+            expect(last_response).to have_status_code(204)
           end
 
           it 'creates an appropriate event' do
@@ -378,7 +378,7 @@ module VCAP::CloudController
       context 'when acting on behalf of the current user' do
         it 'succeeds' do
           delete "/v2/users/#{user.guid}/audited_spaces/#{space.guid}"
-          expect(last_response.status).to eq(204)
+          expect(last_response).to have_status_code(204)
         end
 
         it 'creates an appropriate event' do
@@ -399,7 +399,7 @@ module VCAP::CloudController
 
         it 'fails with 403' do
           delete "/v2/users/#{other_user.guid}/audited_spaces/#{space.guid}"
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
           expect(decoded_response['code']).to eq(10003)
         end
       end
@@ -418,7 +418,7 @@ module VCAP::CloudController
 
           it 'succeeds' do
             delete "/v2/users/#{other_user.guid}/audited_spaces/#{space.guid}"
-            expect(last_response.status).to eq(204)
+            expect(last_response).to have_status_code(204)
           end
 
           it 'creates an appropriate event' do
@@ -452,7 +452,7 @@ module VCAP::CloudController
 
           it 'is allowed' do
             delete "/v2/users/#{billing_manager.guid}/billing_managed_organizations/#{org.guid}"
-            expect(last_response.status).to eq(204)
+            expect(last_response).to have_status_code(204)
           end
 
           it 'creates an appropriate event' do
@@ -485,7 +485,7 @@ module VCAP::CloudController
           it 'is allowed' do
             set_current_user(billing_manager)
             delete "/v2/users/#{billing_manager.guid}/billing_managed_organizations/#{org.guid}"
-            expect(last_response.status).to eq(204)
+            expect(last_response).to have_status_code(204)
           end
 
           it 'creates an appropriate event' do
@@ -528,7 +528,7 @@ module VCAP::CloudController
 
           it 'is allowed' do
             delete "/v2/users/#{org_manager.guid}/managed_organizations/#{org.guid}"
-            expect(last_response.status).to eq(204)
+            expect(last_response).to have_status_code(204)
           end
 
           it 'creates an appropriate event' do
@@ -557,7 +557,7 @@ module VCAP::CloudController
 
           it 'is allowed' do
             delete "/v2/users/#{org_manager.guid}/managed_organizations/#{org.guid}"
-            expect(last_response.status).to eq(204)
+            expect(last_response).to have_status_code(204)
           end
 
           it 'creates an appropriate event' do
@@ -597,7 +597,7 @@ module VCAP::CloudController
       context 'as an org user' do
         it 'can not remove itself' do
           delete "/v2/users/#{user.guid}/organizations/#{org.guid}"
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
           expect(decoded_response['code']).to eq(30006)
         end
 
@@ -610,7 +610,7 @@ module VCAP::CloudController
 
           it 'fails with 403' do
             delete "/v2/users/#{other_user.guid}/organizations/#{org.guid}"
-            expect(last_response.status).to eq(403)
+            expect(last_response).to have_status_code(403)
             expect(decoded_response['code']).to eq(10003)
           end
         end
@@ -628,7 +628,7 @@ module VCAP::CloudController
 
           it 'can remove itself' do
             delete "/v2/users/#{user.guid}/organizations/#{org.guid}"
-            expect(last_response.status).to eq(204)
+            expect(last_response).to have_status_code(204)
           end
 
           it 'creates an appropriate event' do
@@ -640,7 +640,7 @@ module VCAP::CloudController
 
         it 'cannot remove itself if it is the only manager' do
           delete "/v2/users/#{user.guid}/organizations/#{org.guid}"
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
         end
       end
 
@@ -656,7 +656,7 @@ module VCAP::CloudController
 
           it 'can remove itself' do
             delete "/v2/users/#{user.guid}/organizations/#{org.guid}"
-            expect(last_response.status).to eq(204)
+            expect(last_response).to have_status_code(204)
           end
 
           it 'creates an appropriate event' do
@@ -668,7 +668,7 @@ module VCAP::CloudController
 
         it 'cannot remove itself if it is the only billing manager' do
           delete "/v2/users/#{user.guid}/organizations/#{org.guid}"
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
         end
       end
 
@@ -683,7 +683,7 @@ module VCAP::CloudController
 
           it 'succeeds' do
             delete "/v2/users/#{other_user.guid}/organizations/#{org.guid}"
-            expect(last_response.status).to eq(204)
+            expect(last_response).to have_status_code(204)
           end
 
           it 'creates an appropriate event' do
@@ -720,7 +720,7 @@ module VCAP::CloudController
 
           it 'succeeds' do
             delete "/v2/users/#{other_user.guid}/managed_spaces/#{space.guid}"
-            expect(last_response.status).to eq(204)
+            expect(last_response).to have_status_code(204)
           end
 
           it 'creates an appropriate event' do
@@ -733,7 +733,7 @@ module VCAP::CloudController
         context 'when acting on oneself' do
           it 'succeeds' do
             delete "/v2/users/#{user.guid}/managed_spaces/#{space.guid}"
-            expect(last_response.status).to eq(204)
+            expect(last_response).to have_status_code(204)
           end
 
           it 'creates an appropriate event' do
@@ -748,7 +748,7 @@ module VCAP::CloudController
         context 'when acting on another user' do
           it 'fails with a 403' do
             delete "/v2/users/#{other_user.guid}/managed_spaces/#{space.guid}"
-            expect(last_response.status).to eq(403)
+            expect(last_response).to have_status_code(403)
           end
         end
       end
@@ -769,7 +769,7 @@ module VCAP::CloudController
       context 'when acting on behalf of the current user' do
         it 'succeeds' do
           delete "/v2/users/#{user.guid}/spaces/#{space.guid}"
-          expect(last_response.status).to eq(204)
+          expect(last_response).to have_status_code(204)
           expect(Space.all).to include(space)
         end
 
@@ -790,7 +790,7 @@ module VCAP::CloudController
 
         it 'fails with 403' do
           delete "/v2/users/#{other_user.guid}/spaces/#{space.guid}"
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
           expect(decoded_response['code']).to eq(10003)
         end
       end
@@ -808,7 +808,7 @@ module VCAP::CloudController
 
           it 'succeeds' do
             delete "/v2/users/#{other_user.guid}/spaces/#{space.guid}"
-            expect(last_response.status).to eq(204)
+            expect(last_response).to have_status_code(204)
           end
 
           it 'creates an appropriate event' do
@@ -866,7 +866,7 @@ module VCAP::CloudController
 
         it 'fails with 403' do
           put "/v2/users/#{other_user.guid}/audited_spaces/#{space.guid}"
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
           expect(decoded_response['code']).to eq(10003)
         end
 
@@ -877,7 +877,7 @@ module VCAP::CloudController
 
           it 'succeeds' do
             put "/v2/users/#{other_user.guid}/audited_spaces/#{space.guid}"
-            expect(last_response.status).to eq(201)
+            expect(last_response).to have_status_code(201)
             expect(space.auditors).to include(other_user)
             expect(decoded_response).to be_a_response_like(expected_response)
           end
@@ -926,7 +926,7 @@ module VCAP::CloudController
 
         it 'fails with 403' do
           put "/v2/users/#{other_user.guid}/managed_spaces/#{space.guid}"
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
           expect(decoded_response['code']).to eq(10003)
         end
 
@@ -937,7 +937,7 @@ module VCAP::CloudController
 
           it 'succeeds' do
             put "/v2/users/#{other_user.guid}/managed_spaces/#{space.guid}"
-            expect(last_response.status).to eq(201)
+            expect(last_response).to have_status_code(201)
             space.reload
             expect(space.managers).to include(other_user)
             expect(decoded_response).to be_a_response_like(expected_response)
@@ -987,7 +987,7 @@ module VCAP::CloudController
 
         it 'fails with 403' do
           put "/v2/users/#{other_user.guid}/spaces/#{space.guid}"
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
           expect(decoded_response['code']).to eq(10003)
         end
 
@@ -998,7 +998,7 @@ module VCAP::CloudController
 
           it 'succeeds' do
             put "/v2/users/#{other_user.guid}/spaces/#{space.guid}"
-            expect(last_response.status).to eq(201)
+            expect(last_response).to have_status_code(201)
             space.reload
             expect(space.developers).to include(other_user)
             expect(decoded_response).to be_a_response_like(expected_response)

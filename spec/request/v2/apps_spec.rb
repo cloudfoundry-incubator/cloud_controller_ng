@@ -27,7 +27,7 @@ RSpec.describe 'Apps' do
     it 'lists all apps' do
       get '/v2/apps', nil, headers_for(user)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -93,7 +93,7 @@ RSpec.describe 'Apps' do
       non_web_process = VCAP::CloudController::ProcessModelFactory.make(space: space, type: 'non-web')
 
       get '/v2/apps', nil, headers_for(user)
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response['resources'].map { |r| r['metadata']['guid'] }).not_to include(non_web_process.guid)
@@ -106,7 +106,7 @@ RSpec.describe 'Apps' do
         service_binding = VCAP::CloudController::ServiceBinding.make(app: process.app, service_instance: VCAP::CloudController::ManagedServiceInstance.make(space: space))
 
         get '/v2/apps?inline-relations-depth=1', nil, headers_for(user)
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
 
         parsed_response = MultiJson.load(last_response.body)
         expect(parsed_response).to be_a_response_like(
@@ -269,7 +269,7 @@ RSpec.describe 'Apps' do
         get '/v2/apps?q=name:filter-name', nil, admin_headers
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['total_results']).to eq(1)
         expect(parsed_response['resources'][0]['entity']['name']).to eq('filter-name')
       end
@@ -280,7 +280,7 @@ RSpec.describe 'Apps' do
         get "/v2/apps?q=space_guid:#{space.guid}", nil, admin_headers
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['total_results']).to eq(1)
         expect(parsed_response['resources'][0]['entity']['space_guid']).to eq(space.guid)
       end
@@ -291,7 +291,7 @@ RSpec.describe 'Apps' do
         get "/v2/apps?q=organization_guid:#{space.organization.guid}", nil, admin_headers
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['total_results']).to eq(1)
         expect(parsed_response['resources'][0]['entity']['space_guid']).to eq(space.guid)
       end
@@ -302,7 +302,7 @@ RSpec.describe 'Apps' do
         get '/v2/apps?q=diego:true', nil, admin_headers
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['total_results']).to eq(2)
       end
 
@@ -312,7 +312,7 @@ RSpec.describe 'Apps' do
         get "/v2/apps?q=stack_guid:#{search_process.stack.guid}", nil, admin_headers
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['total_results']).to eq(1)
         expect(parsed_response['resources'][0]['entity']['stack_guid']).to eq(search_process.stack.guid)
       end
@@ -330,7 +330,7 @@ RSpec.describe 'Apps' do
 
     it 'displays the app' do
       get "/v2/apps/#{process.guid}", nil, headers_for(user)
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -390,7 +390,7 @@ RSpec.describe 'Apps' do
       non_web_process = VCAP::CloudController::ProcessModelFactory.make(space: space, type: 'non-web')
 
       get "/v2/apps/#{non_web_process.guid}", nil, headers_for(user)
-      expect(last_response.status).to eq(404)
+      expect(last_response).to have_status_code(404)
     end
   end
 
@@ -407,7 +407,7 @@ RSpec.describe 'Apps' do
       post '/v2/apps', post_params, headers_for(user)
 
       process = VCAP::CloudController::ProcessModel.last
-      expect(last_response.status).to eq(201), last_response.body
+      expect(last_response).to have_status_code(201), last_response.body
       expect(MultiJson.load(last_response.body)).to be_a_response_like(
         {
           'metadata' => {
@@ -474,7 +474,7 @@ RSpec.describe 'Apps' do
         post '/v2/apps', post_params, headers_for(user)
 
         process = VCAP::CloudController::ProcessModel.last
-        expect(last_response.status).to eq(201)
+        expect(last_response).to have_status_code(201)
         expect(MultiJson.load(last_response.body)).to be_a_response_like(
           {
             'metadata' => {
@@ -551,7 +551,7 @@ RSpec.describe 'Apps' do
       put "/v2/apps/#{process.guid}", update_params, headers_for(user)
 
       process.reload
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
       expect(MultiJson.load(last_response.body)).to be_a_response_like(
         {
           'metadata' => {
@@ -632,7 +632,7 @@ RSpec.describe 'Apps' do
         put "/v2/apps/#{process.guid}", update_params, headers_for(user)
 
         process.reload
-        expect(last_response.status).to eq(201)
+        expect(last_response).to have_status_code(201)
         expect(MultiJson.load(last_response.body)).to be_a_response_like(
           {
             'metadata' => {
@@ -709,7 +709,7 @@ RSpec.describe 'Apps' do
           put "/v2/apps/#{process.guid}", update_params, headers_for(user)
 
           process.reload
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
           expect(MultiJson.load(last_response.body)).to be_a_response_like(
             {
               'metadata' => {
@@ -774,7 +774,7 @@ RSpec.describe 'Apps' do
     it 'deletes the specified app' do
       delete "/v2/apps/#{process.guid}", nil, headers_for(user)
 
-      expect(last_response.status).to eq(204)
+      expect(last_response).to have_status_code(204)
 
       get "/v2/apps/#{process.guid}", nil, headers_for(user)
       parsed_response = MultiJson.load(last_response.body)
@@ -789,7 +789,7 @@ RSpec.describe 'Apps' do
       it 'deletes the specified app' do
         delete "/v2/apps/#{process.guid}", nil, headers_for(user)
 
-        expect(last_response.status).to eq(204)
+        expect(last_response).to have_status_code(204)
 
         get "/v2/apps/#{process.guid}", nil, headers_for(user)
         parsed_response = MultiJson.load(last_response.body)
@@ -816,7 +816,7 @@ RSpec.describe 'Apps' do
 
       get "/v2/apps/#{process.guid}/summary", nil, headers_for(user)
 
-      expect(last_response.status).to eq(200), last_response.body
+      expect(last_response).to have_status_code(200), last_response.body
       expect(MultiJson.load(last_response.body)).to be_a_response_like(
         {
           'guid'                       => process.guid,
@@ -887,7 +887,7 @@ RSpec.describe 'Apps' do
 
     it 'shows the apps env' do
       get "/v2/apps/#{process.guid}/env", nil, headers_for(user)
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       expect(MultiJson.load(last_response.body)).to be_a_response_like(
         {
@@ -972,7 +972,7 @@ RSpec.describe 'Apps' do
     it 'displays the stats' do
       get "/v2/apps/#{process.guid}/stats", nil, headers_for(user)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
         {
@@ -1030,7 +1030,7 @@ RSpec.describe 'Apps' do
         get "/v2/apps/#{process.guid}/instances", nil, headers_for(user)
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response).to be_a_response_like(
           {
             '0' => {
@@ -1056,7 +1056,7 @@ RSpec.describe 'Apps' do
     it 'stops the instance' do
       delete "/v2/apps/#{process.guid}/instances/0", nil, headers_for(user)
 
-      expect(last_response.status).to eq(204)
+      expect(last_response).to have_status_code(204)
       expect(bbs_apps_client).to have_received(:stop_index)
     end
   end
@@ -1077,7 +1077,7 @@ RSpec.describe 'Apps' do
       parsed_response = MultiJson.load(last_response.body)
 
       process.reload
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
       expect(parsed_response).to be_a_response_like(
         {
           'metadata' => {
@@ -1165,7 +1165,7 @@ RSpec.describe 'Apps' do
     it 'queues a job to copy the bits' do
       post "/v2/apps/#{destination_process.guid}/copy_bits", MultiJson.dump({ source_app_guid: source_process.guid }), headers_for(user)
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response['entity']['status']).to eq 'queued'
     end
@@ -1194,7 +1194,7 @@ RSpec.describe 'Apps' do
       get "/v2/apps/#{process.guid}/download", nil, headers_for(user)
 
       expect(last_response.headers['Location']).to include('cc-packages.s3.amazonaws.com')
-      expect(last_response.status).to eq(302)
+      expect(last_response).to have_status_code(302)
     end
   end
 
@@ -1211,7 +1211,7 @@ RSpec.describe 'Apps' do
 
     it 'redirects to a blobstore to download the droplet' do
       get "/v2/apps/#{process.guid}/droplet/download", nil, headers_for(user)
-      expect(last_response.status).to eq(302)
+      expect(last_response).to have_status_code(302)
       expect(last_response.headers['Location']).to include('cc-droplets.s3.amazonaws.com')
     end
   end
@@ -1314,7 +1314,7 @@ RSpec.describe 'Apps' do
     it 'shows the routes associated with an app' do
       get "/v2/apps/#{process.guid}/routes", nil, headers_for(user)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(MultiJson.load(last_response.body)).to be_a_response_like(
         {
           'total_results' => 1,
@@ -1356,7 +1356,7 @@ RSpec.describe 'Apps' do
       put "/v2/apps/#{process.guid}/routes/#{route.guid}", nil, headers_for(user)
       process.reload
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
         {
@@ -1429,7 +1429,7 @@ RSpec.describe 'Apps' do
 
       delete "/v2/apps/#{process.guid}/routes/#{route1.guid}", nil, headers_for(user)
 
-      expect(last_response.status).to eq(204)
+      expect(last_response).to have_status_code(204)
       expect(process.reload.routes).not_to include(route1)
       expect(route_mapping1.exists?).to be_falsey
     end
@@ -1444,7 +1444,7 @@ RSpec.describe 'Apps' do
       get "/v2/apps/#{process.guid}/route_mappings", nil, headers_for(user)
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(
         {
           'total_results' => 1,

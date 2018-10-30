@@ -54,7 +54,7 @@ module VCAP::CloudController
         end
 
         it 'should contain the basic app attributes' do
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(decoded_response['guid']).to eq(@process.app.guid)
           parse(MultiJson.dump(@process.to_hash)).each do |k, v|
             expect(v).to eql(decoded_response[k.to_s]), "value of field #{k} expected to eql #{v}"

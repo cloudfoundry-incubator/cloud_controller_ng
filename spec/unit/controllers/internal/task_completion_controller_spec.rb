@@ -19,7 +19,7 @@ module VCAP::CloudController
       it 'returns a 200 and marks the task as succeeded' do
         post url, MultiJson.dump(task_response)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(last_response.body).to eq '{}'
 
         expect(task.reload.state).to eq 'SUCCEEDED'
@@ -40,7 +40,7 @@ module VCAP::CloudController
         it 'marks the task as failed and sets the result message' do
           post url, MultiJson.dump(task_response)
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(task.reload.state).to eq 'FAILED'
           expect(task.reload.failure_reason).to eq 'just cuz'
         end
@@ -52,7 +52,7 @@ module VCAP::CloudController
         it 'response with a 404' do
           post url, MultiJson.dump(task_response)
 
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
           expect(last_response.body).to match /NotFound/
         end
       end
@@ -64,7 +64,7 @@ module VCAP::CloudController
           it 'responds with a 400 status code' do
             post url, MultiJson.dump(task_response)
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(last_response.body).to match(/InvalidRequest/)
           end
         end
@@ -75,7 +75,7 @@ module VCAP::CloudController
           it 'responds with a 400 status code' do
             post url, MultiJson.dump(task_response)
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(last_response.body).to match(/InvalidRequest/)
           end
         end
@@ -86,7 +86,7 @@ module VCAP::CloudController
           it 'fails with a 400' do
             post url, 'this is not json'
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(last_response.body).to match(/MessageParseError/)
           end
         end
@@ -98,7 +98,7 @@ module VCAP::CloudController
           it 'fails with a 400' do
             post url, MultiJson.dump(task_response)
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(last_response.body).to match(/InvalidRequest/)
           end
         end

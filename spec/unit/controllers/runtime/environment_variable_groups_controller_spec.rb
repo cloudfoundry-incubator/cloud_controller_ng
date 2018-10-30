@@ -8,7 +8,7 @@ module VCAP::CloudController
           set_current_user_as_admin
 
           get '/v2/config/environment_variable_groups/flibble'
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
           expect(decoded_response['error_code']).to match(/CF-NotFound/)
         end
       end
@@ -26,7 +26,7 @@ module VCAP::CloudController
             group.save
 
             get '/v2/config/environment_variable_groups/running'
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             expect(decoded_response).to eq({
               'foo' => 'bar',
               'to all' => 'a good morrow'
@@ -48,7 +48,7 @@ module VCAP::CloudController
             group.save
 
             get '/v2/config/environment_variable_groups/staging'
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             expect(decoded_response).to eq({
               'foo' => 'bar',
               'to all' => 'a good morrow'
@@ -63,7 +63,7 @@ module VCAP::CloudController
         it 'returns a 404' do
           set_current_user_as_admin
           put '/v2/config/environment_variable_groups/flibble', '{}'
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
           expect(decoded_response['error_code']).to match(/CF-NotFound/)
         end
       end
@@ -74,7 +74,7 @@ module VCAP::CloudController
             set_current_user(User.make)
 
             put '/v2/config/environment_variable_groups/staging', '{"foo": "bar"}'
-            expect(last_response.status).to eq(403)
+            expect(last_response).to have_status_code(403)
           end
         end
 
@@ -83,7 +83,7 @@ module VCAP::CloudController
             set_current_user_as_admin
 
             put '/v2/config/environment_variable_groups/staging', '{"foo": "bar"}'
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             expect(EnvironmentVariableGroup.staging.environment_json).to include({
               'foo' => 'bar'
             })
@@ -96,7 +96,7 @@ module VCAP::CloudController
               it 'returns a 400' do
                 set_current_user_as_admin
                 put '/v2/config/environment_variable_groups/staging', 'jam sandwich'
-                expect(last_response.status).to eq(400)
+                expect(last_response).to have_status_code(400)
                 expect(decoded_response['error_code']).to eq('CF-MessageParseError')
                 expect(decoded_response['description']).to match(/Request invalid due to parse error/)
               end
@@ -122,7 +122,7 @@ module VCAP::CloudController
             set_current_user(User.make)
 
             put '/v2/config/environment_variable_groups/running', '{"foo": "bar"}'
-            expect(last_response.status).to eq(403)
+            expect(last_response).to have_status_code(403)
           end
         end
 
@@ -130,7 +130,7 @@ module VCAP::CloudController
           it 'updates the environment_json with the given hash' do
             set_current_user_as_admin
             put '/v2/config/environment_variable_groups/running', '{"foo": "bar"}'
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             expect(EnvironmentVariableGroup.running.environment_json).to include({
               'foo' => 'bar'
             })
@@ -145,7 +145,7 @@ module VCAP::CloudController
               it 'returns a 400' do
                 set_current_user_as_admin
                 put '/v2/config/environment_variable_groups/running', req_body
-                expect(last_response.status).to eq(400)
+                expect(last_response).to have_status_code(400)
                 expect(decoded_response['error_code']).to eq('CF-MessageParseError')
                 expect(decoded_response['description']).to match(/Request invalid due to parse error/)
               end
@@ -167,7 +167,7 @@ module VCAP::CloudController
               it 'returns a 400' do
                 set_current_user_as_admin
                 put '/v2/config/environment_variable_groups/running', req_body
-                expect(last_response.status).to eq(400), last_response.body
+                expect(last_response).to have_status_code(400), last_response.body
                 expect(decoded_response['error_code']).to eq('CF-EnvironmentVariableGroupInvalid')
                 expect(decoded_response['description']).to match(/VCAP_/)
               end
@@ -189,7 +189,7 @@ module VCAP::CloudController
               it 'returns a 400' do
                 set_current_user_as_admin
                 put '/v2/config/environment_variable_groups/running', req_body
-                expect(last_response.status).to eq(400)
+                expect(last_response).to have_status_code(400)
                 expect(decoded_response['error_code']).to eq('CF-EnvironmentVariableGroupInvalid')
                 expect(decoded_response['description']).to match(/Cannot be 'null'. You may want to try empty object '{}' to clear the group./)
               end

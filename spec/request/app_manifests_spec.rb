@@ -61,7 +61,7 @@ RSpec.describe 'App Manifests' do
 
       post "/v3/apps/#{app_model.guid}/actions/apply_manifest", yml_manifest, yml_headers(user_header)
 
-      expect(last_response.status).to eq(202)
+      expect(last_response).to have_status_code(202)
       job_guid = VCAP::CloudController::PollableJobModel.last.guid
       expect(last_response.headers['Location']).to match(%r(/v3/jobs/#{job_guid}))
 
@@ -205,7 +205,7 @@ RSpec.describe 'App Manifests' do
 
         post "/v3/apps/#{app_model.guid}/actions/apply_manifest", yml_manifest, yml_headers(user_header)
 
-        expect(last_response.status).to eq(202)
+        expect(last_response).to have_status_code(202)
         job_guid = VCAP::CloudController::PollableJobModel.last.guid
         expect(last_response.headers['Location']).to match(%r(/v3/jobs/#{job_guid}))
 
@@ -263,7 +263,7 @@ RSpec.describe 'App Manifests' do
 
           post "/v3/apps/#{app_model.guid}/actions/apply_manifest", yml_manifest, yml_headers(user_header)
 
-          expect(last_response.status).to eq(202)
+          expect(last_response).to have_status_code(202)
           job_guid = VCAP::CloudController::PollableJobModel.last.guid
           expect(last_response.headers['Location']).to match(%r(/v3/jobs/#{job_guid}))
 
@@ -297,7 +297,7 @@ RSpec.describe 'App Manifests' do
 
           post "/v3/apps/#{app_model.guid}/actions/apply_manifest", yml_manifest, yml_headers(user_header)
 
-          expect(last_response.status).to eq(202)
+          expect(last_response).to have_status_code(202)
           job_guid = VCAP::CloudController::PollableJobModel.last.guid
           expect(last_response.headers['Location']).to match(%r(/v3/jobs/#{job_guid}))
 
@@ -342,7 +342,7 @@ RSpec.describe 'App Manifests' do
       it 'applies the manifest' do
         post "/v3/apps/#{app_model.guid}/actions/apply_manifest", yml_manifest, yml_headers(user_header)
 
-        expect(last_response.status).to eq(202)
+        expect(last_response).to have_status_code(202)
         job_guid = VCAP::CloudController::PollableJobModel.last.guid
         expect(last_response.headers['Location']).to match(%r(/v3/jobs/#{job_guid}))
 
@@ -433,7 +433,7 @@ RSpec.describe 'App Manifests' do
       it 'retrieves an app manifest for the app' do
         get "/v3/apps/#{app_model.guid}/manifest", nil, user_header
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(last_response.body).to eq(expected_yml_manifest)
       end
     end
@@ -503,7 +503,7 @@ RSpec.describe 'App Manifests' do
       it 'retrieves an app manifest for the app' do
         get "/v3/apps/#{app_model.guid}/manifest", nil, user_header
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(last_response.body).to eq(expected_yml_manifest)
       end
     end

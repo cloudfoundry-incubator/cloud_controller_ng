@@ -19,7 +19,7 @@ RSpec.describe 'PrivateDomains' do
     it 'lists all private domains' do
       get '/v2/private_domains', nil, headers_for(user)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -54,7 +54,7 @@ RSpec.describe 'PrivateDomains' do
 
     it 'shows the private domain' do
       get "/v2/private_domains/#{domain.guid}", nil, admin_headers_for(user)
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -108,7 +108,7 @@ RSpec.describe 'PrivateDomains' do
     it 'updates the private domain' do
       put "/v2/private_domains/#{domain.guid}", '{"name": "meow.com"}', admin_headers_for(user)
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
       parsed_response = MultiJson.load(last_response.body)
 
       expect(parsed_response).to be_a_response_like({

@@ -45,7 +45,7 @@ RSpec.describe 'Apps' do
 
     it 'creates an app' do
       post '/v3/apps', create_request.to_json, user_header
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       parsed_response = MultiJson.load(last_response.body)
       app_guid = parsed_response['guid']
@@ -109,7 +109,7 @@ RSpec.describe 'Apps' do
 
     it 'creates an empty web process with the same guid as the app (so it is visible on the v2 apps api)' do
       post '/v3/apps', create_request.to_json, user_header
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       parsed_response = MultiJson.load(last_response.body)
       app_guid = parsed_response['guid']
@@ -172,7 +172,7 @@ RSpec.describe 'Apps' do
         }
 
         parsed_response = MultiJson.load(last_response.body)
-        expect(last_response.status).to eq(201)
+        expect(last_response).to have_status_code(201)
         expect(parsed_response).to be_a_response_like(expected_response)
 
         event = VCAP::CloudController::Event.last
@@ -213,7 +213,7 @@ RSpec.describe 'Apps' do
       VCAP::CloudController::AppModel.make
 
       get '/v3/apps?per_page=2&include=space', nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -342,7 +342,7 @@ RSpec.describe 'Apps' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['resources'].map { |r| r['name'] }).to eq(['name1', 'name3'])
         expect(parsed_response['pagination']).to eq(expected_pagination)
       end
@@ -365,7 +365,7 @@ RSpec.describe 'Apps' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['resources'].map { |r| r['name'] }).to eq(['name1', 'name2'])
         expect(parsed_response['pagination']).to eq(expected_pagination)
       end
@@ -388,7 +388,7 @@ RSpec.describe 'Apps' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['resources'].map { |r| r['name'] }).to eq(['name1', 'name3'])
         expect(parsed_response['pagination']).to eq(expected_pagination)
       end
@@ -411,7 +411,7 @@ RSpec.describe 'Apps' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['resources'].map { |r| r['name'] }).to eq(['name1', 'name3'])
         expect(parsed_response['pagination']).to eq(expected_pagination)
       end
@@ -430,7 +430,7 @@ RSpec.describe 'Apps' do
 
         # ASCENDING
         get '/v3/apps?order_by=name', nil, user_header
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         parsed_response = MultiJson.load(last_response.body)
         app_names = parsed_response['resources'].map { |i| i['name'] }
         expect(app_names).to eq(ascending)
@@ -438,7 +438,7 @@ RSpec.describe 'Apps' do
 
         # DESCENDING
         get '/v3/apps?order_by=-name', nil, user_header
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         parsed_response = MultiJson.load(last_response.body)
         app_names = parsed_response['resources'].map { |i| i['name'] }
         expect(app_names).to eq(descending)
@@ -459,7 +459,7 @@ RSpec.describe 'Apps' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(400)
+        expect(last_response).to have_status_code(400)
         expect(parsed_response['errors'].first['detail']).to match(/label_selector/)
       end
 
@@ -477,7 +477,7 @@ RSpec.describe 'Apps' do
           'previous' => nil
         }
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['resources'].map { |r| r['name'] }).to contain_exactly('name1')
         expect(parsed_response['pagination']).to eq(expected_pagination)
       end
@@ -496,7 +496,7 @@ RSpec.describe 'Apps' do
           'previous' => nil
         }
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['resources'].map { |r| r['name'] }).to contain_exactly('name2')
         expect(parsed_response['pagination']).to eq(expected_pagination)
       end
@@ -522,7 +522,7 @@ RSpec.describe 'Apps' do
       app_model.add_process(VCAP::CloudController::ProcessModel.make(instances: 2))
 
       get "/v3/apps/#{app_model.guid}?include=space", nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -665,7 +665,7 @@ RSpec.describe 'Apps' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
   end
@@ -724,7 +724,7 @@ RSpec.describe 'Apps' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response['resources']).to include(hash_including('guid' => build.guid))
       expect(parsed_response['resources']).to include(hash_including('guid' => second_build.guid))
       expect(parsed_response).to be_a_response_like({
@@ -801,7 +801,7 @@ RSpec.describe 'Apps' do
     it 'deletes an App' do
       delete "/v3/apps/#{app_model.guid}", nil, user_header
 
-      expect(last_response.status).to eq(202)
+      expect(last_response).to have_status_code(202)
       expect(last_response.headers['Location']).to match(%r(/v3/jobs/#{VCAP::CloudController::PollableJobModel.last.guid}))
 
       Delayed::Worker.new.work_off
@@ -866,7 +866,7 @@ RSpec.describe 'Apps' do
       }
 
       patch "/v3/apps/#{app_model.guid}", update_request.to_json, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       app_model.reload
 
@@ -953,7 +953,7 @@ RSpec.describe 'Apps' do
       app_model.save
 
       post "/v3/apps/#{app_model.guid}/actions/start", nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like({
@@ -1027,7 +1027,7 @@ RSpec.describe 'Apps' do
       app_model.save
 
       post "/v3/apps/#{app_model.guid}/actions/stop", nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -1103,7 +1103,7 @@ RSpec.describe 'Apps' do
       app_model.save
 
       post "/v3/apps/#{app_model.guid}/actions/restart", nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -1176,7 +1176,7 @@ RSpec.describe 'Apps' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like({
         'data' => {
           'guid' => droplet_model.guid
@@ -1219,7 +1219,7 @@ RSpec.describe 'Apps' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like({
         'guid' => droplet_model.guid,
         'state' => VCAP::CloudController::DropletModel::STAGED_STATE,
@@ -1287,7 +1287,7 @@ RSpec.describe 'Apps' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
 
       events = VCAP::CloudController::Event.where(actor: user.guid).all
@@ -1321,7 +1321,7 @@ RSpec.describe 'Apps' do
 
       patch "/v3/apps/#{app_model.guid}/relationships/current_droplet", request_body.to_json, user_header
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       events = VCAP::CloudController::Event.where(actor: user.guid).all
 
@@ -1383,7 +1383,7 @@ RSpec.describe 'Apps' do
       }
 
       patch "/v3/apps/#{app_model.guid}/environment_variables", update_request.to_json, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -1407,7 +1407,7 @@ RSpec.describe 'Apps' do
       app_model = VCAP::CloudController::AppModel.make(name: 'name1', space: space, desired_state: 'STOPPED', environment_variables: { meep: 'moop' })
 
       get "/v3/apps/#{app_model.guid}/environment_variables", nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(

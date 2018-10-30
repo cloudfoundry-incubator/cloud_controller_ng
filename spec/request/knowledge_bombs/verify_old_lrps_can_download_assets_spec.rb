@@ -53,7 +53,7 @@ RSpec.describe 'DropletsController download endpoint with checksum exists:' do
     context 'when an lrp tries to download a droplet' do
       it 'does not return a 404 because the endpoint is still present, and redirects to the droplet-url' do
         get "/internal/v2/droplets/#{droplet.guid}/#{droplet.sha256_checksum}/download", nil, {}
-        expect(last_response.status).to eq(302)
+        expect(last_response).to have_status_code(302)
       end
     end
   end

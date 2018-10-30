@@ -271,7 +271,7 @@ module VCAP::CloudController
           set_current_user(User.make)
 
           post '/v2/service_brokers', body
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
         end
 
         it 'returns a 400 if a another broker (private or public) exists with that name' do
@@ -315,7 +315,7 @@ module VCAP::CloudController
 
         it 'returns a 403 if the SpaceDeveloper does not include a space_guid' do
           post '/v2/service_brokers', body
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
         end
       end
 
@@ -618,7 +618,7 @@ module VCAP::CloudController
 
       it 'returns 404 when deleting a service broker that does not exist' do
         delete '/v2/service_brokers/1234'
-        expect(last_response.status).to eq(404)
+        expect(last_response).to have_status_code(404)
       end
 
       context 'when a service instance exists', isolation: :truncation do
@@ -629,7 +629,7 @@ module VCAP::CloudController
 
           delete "/v2/service_brokers/#{broker.guid}"
 
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
           expect(decoded_response.fetch('code')).to eq(270010)
           expect(decoded_response.fetch('description')).to match(/Can not remove brokers that have associated service instances/)
 
@@ -764,7 +764,7 @@ module VCAP::CloudController
             it 'returns an error' do
               put "/v2/service_brokers/#{broker.guid}", body
 
-              expect(last_response.status).to eq(400)
+              expect(last_response).to have_status_code(400)
               expect(decoded_response.fetch('code')).to eq(270002)
               expect(decoded_response.fetch('description')).to match(/The service broker name is taken/)
             end
@@ -856,7 +856,7 @@ module VCAP::CloudController
 
           it 'updates the broker' do
             put "/v2/service_brokers/#{broker.guid}", body
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
 
             broker.reload
             expect(broker.name).to eq(body_hash[:name])
@@ -877,7 +877,7 @@ module VCAP::CloudController
 
             it 'does not update the broker' do
               put "/v2/service_brokers/#{broker.guid}", body
-              expect(last_response.status).to eq(200)
+              expect(last_response).to have_status_code(200)
               expect(broker.space_guid).to eq(old_space_guid)
             end
           end
@@ -895,7 +895,7 @@ module VCAP::CloudController
 
             it 'does not update the broker' do
               put "/v2/service_brokers/#{broker.guid}", body
-              expect(last_response.status).to eq(403)
+              expect(last_response).to have_status_code(403)
             end
           end
         end

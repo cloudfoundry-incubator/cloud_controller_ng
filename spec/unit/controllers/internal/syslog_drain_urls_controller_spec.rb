@@ -226,7 +226,7 @@ module VCAP::CloudController
               'next_id'    => token,
             }
 
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             token = decoded_response['next_id']
             apps.merge!(decoded_results)
           end

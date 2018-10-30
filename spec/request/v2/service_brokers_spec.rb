@@ -23,7 +23,7 @@ RSpec.describe 'ServiceBrokers' do
       }
 
       post '/v2/service_brokers', req_body.to_json, admin_headers
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       broker = VCAP::CloudController::ServiceBroker.last
       expect(broker.name).to eq(req_body[:name])
@@ -69,7 +69,7 @@ RSpec.describe 'ServiceBrokers' do
         }
 
         post '/v2/service_brokers', req_body.to_json, admin_headers
-        expect(last_response.status).to eq(502)
+        expect(last_response).to have_status_code(502)
       end
     end
   end

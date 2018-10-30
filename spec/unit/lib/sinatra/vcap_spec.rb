@@ -70,7 +70,7 @@ RSpec.describe 'Sinatra::VCAP', type: :v2_controller do
     end
 
     it 'should return success' do
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(last_response.body).to eq('ok')
     end
 
@@ -84,7 +84,7 @@ RSpec.describe 'Sinatra::VCAP', type: :v2_controller do
     end
 
     it 'should return a 404' do
-      expect(last_response.status).to eq(404)
+      expect(last_response).to have_status_code(404)
       expect(decoded_response['code']).to eq(10000)
       expect(decoded_response['description']).to match(/Unknown request/)
     end
@@ -99,7 +99,7 @@ RSpec.describe 'Sinatra::VCAP', type: :v2_controller do
     end
 
     it 'should return 500' do
-      expect(last_response.status).to eq(500)
+      expect(last_response).to have_status_code(500)
       expect(decoded_response).to eq({
                                        'code' => 10001,
                                        'error_code' => 'UnknownError',
@@ -117,7 +117,7 @@ RSpec.describe 'Sinatra::VCAP', type: :v2_controller do
     end
 
     it 'should return 400' do
-      expect(last_response.status).to eq(400)
+      expect(last_response).to have_status_code(400)
     end
 
     it 'should return structure' do
@@ -136,7 +136,7 @@ RSpec.describe 'Sinatra::VCAP', type: :v2_controller do
     end
 
     it 'should return 418' do
-      expect(last_response.status).to eq(418)
+      expect(last_response).to have_status_code(418)
     end
 
     it 'should return structure' do

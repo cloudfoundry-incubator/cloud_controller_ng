@@ -19,7 +19,7 @@ RSpec.describe 'Service Instances' do
       set_current_user_as_role(role: 'space_developer', org: space.organization, space: space, user: user)
       set_current_user_as_role(role: 'space_developer', org: another_space.organization, space: another_space, user: user)
       get '/v3/service_instances?per_page=2&order_by=name', nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -83,7 +83,7 @@ RSpec.describe 'Service Instances' do
     it 'returns a paginated list of service instances filtered by name' do
       set_current_user_as_role(role: 'space_developer', org: space.organization, space: space, user: user)
       get '/v3/service_instances?per_page=2&names=redis', nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -127,7 +127,7 @@ RSpec.describe 'Service Instances' do
     it 'returns a paginated list of service instances filtered by space guid' do
       set_current_user_as_role(role: 'space_developer', org: space.organization, space: space, user: user)
       get "/v3/service_instances?per_page=2&space_guids=#{space.guid}", nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -194,7 +194,7 @@ RSpec.describe 'Service Instances' do
       it 'returns a paginated list of service instances the user has access to' do
         set_current_user_as_role(role: 'space_developer', org: target_space.organization, space: target_space, user: user)
         get '/v3/service_instances?per_page=2&order_by=name', nil, user_header
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
 
         parsed_response = MultiJson.load(last_response.body)
         expect(parsed_response).to be_a_response_like(
@@ -247,7 +247,7 @@ RSpec.describe 'Service Instances' do
 
       enable_feature_flag!
       post "/v3/service_instances/#{service_instance1.guid}/relationships/shared_spaces", share_request.to_json, admin_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       disable_feature_flag!
     end
@@ -257,7 +257,7 @@ RSpec.describe 'Service Instances' do
 
       get "/v3/service_instances/#{service_instance1.guid}/relationships/shared_spaces", nil, user_header
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       expected_response = {
         'data' => [
@@ -287,7 +287,7 @@ RSpec.describe 'Service Instances' do
       post "/v3/service_instances/#{service_instance1.guid}/relationships/shared_spaces", share_request.to_json, admin_header
 
       parsed_response = MultiJson.load(last_response.body)
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       expected_response = {
         'data' => [
@@ -331,14 +331,14 @@ RSpec.describe 'Service Instances' do
 
       enable_feature_flag!
       post "/v3/service_instances/#{service_instance1.guid}/relationships/shared_spaces", share_request.to_json, admin_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       disable_feature_flag!
     end
 
     it 'unshares the service instance from the target space' do
       delete "/v3/service_instances/#{service_instance1.guid}/relationships/shared_spaces/#{target_space.guid}", nil, admin_header
-      expect(last_response.status).to eq(204)
+      expect(last_response).to have_status_code(204)
 
       event = VCAP::CloudController::Event.last
       expect(event.values).to include({
@@ -364,13 +364,13 @@ RSpec.describe 'Service Instances' do
       disable_feature_flag!
 
       get "/v2/service_bindings/#{service_binding.guid}", nil, admin_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       delete "/v3/service_instances/#{service_instance1.guid}/relationships/shared_spaces/#{target_space.guid}", nil, admin_header
-      expect(last_response.status).to eq(204)
+      expect(last_response).to have_status_code(204)
 
       get "/v2/service_bindings/#{service_binding.guid}", nil, admin_header
-      expect(last_response.status).to eq(404)
+      expect(last_response).to have_status_code(404)
     end
   end
 

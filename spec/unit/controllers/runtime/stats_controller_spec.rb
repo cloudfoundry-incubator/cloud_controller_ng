@@ -53,7 +53,7 @@ module VCAP::CloudController
 
             get "/v2/apps/#{process.app.guid}/stats"
 
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             expect(MultiJson.load(last_response.body)).to eq(expected)
             expect(instances_reporters).to have_received(:stats_for_app).with(
               satisfy { |requested_app| requested_app.guid == process.app.guid })
@@ -84,7 +84,7 @@ module VCAP::CloudController
 
             get "/v2/apps/#{process.app.guid}/stats"
 
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             expect(MultiJson.load(last_response.body)).to eq(expected)
             expect(instances_reporters).to have_received(:stats_for_app).with(
               satisfy { |requested_app| requested_app.guid == process.app.guid })
@@ -104,7 +104,7 @@ module VCAP::CloudController
 
             get "/v2/apps/#{process.app.guid}/stats"
 
-            expect(last_response.status).to eq(500)
+            expect(last_response).to have_status_code(500)
             expect(last_response.body).to match('Server error')
           end
         end
@@ -120,7 +120,7 @@ module VCAP::CloudController
 
             get "/v2/apps/#{process.app.guid}/stats"
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(MultiJson.load(last_response.body)['code']).to eq(200001)
           end
         end
@@ -134,7 +134,7 @@ module VCAP::CloudController
           it 'raises an error' do
             get "/v2/apps/#{process.app.guid}/stats"
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(last_response.body).to match("Could not fetch stats for stopped app: #{process.name}")
           end
         end
@@ -203,7 +203,7 @@ module VCAP::CloudController
 
               get "/v2/apps/#{process.app.guid}/stats"
 
-              expect(last_response.status).to eq(200)
+              expect(last_response).to have_status_code(200)
               expect(MultiJson.load(last_response.body)['0']['isolation_segment']).to eq('isolation-segment-name')
             end
           end
@@ -241,7 +241,7 @@ module VCAP::CloudController
 
             get "/v2/apps/#{process.app.guid}/stats"
 
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             expect(MultiJson.load(last_response.body)).to eq(expected)
             expect(instances_reporters).to have_received(:stats_for_app).with(
               satisfy { |requested_app| requested_app.guid == process.app.guid })
@@ -256,7 +256,7 @@ module VCAP::CloudController
 
             get "/v2/apps/#{process.app.guid}/stats"
 
-            expect(last_response.status).to eq(403)
+            expect(last_response).to have_status_code(403)
           end
         end
       end

@@ -12,7 +12,7 @@ module VCAP::CloudController
           it 'returns a 403 unauthorized error' do
             set_current_user(user, scopes: ['cloud_controller.write'])
             get "/v2/jobs/#{job_request_id}"
-            expect(last_response.status).to eq(403)
+            expect(last_response).to have_status_code(403)
             expect(last_response.body).to match /InsufficientScope/
           end
         end
@@ -21,7 +21,7 @@ module VCAP::CloudController
           it 'allows the user to access the job' do
             set_current_user(user, scopes: ['cloud_controller.read'])
             get "/v2/jobs/#{job_request_id}"
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
           end
         end
 
@@ -29,7 +29,7 @@ module VCAP::CloudController
           it 'allows the user to access the job' do
             set_current_user(user, scopes: ['cloud_controller.admin'])
             get "/v2/jobs/#{job_request_id}"
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
           end
         end
       end

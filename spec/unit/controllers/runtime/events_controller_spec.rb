@@ -130,10 +130,10 @@ module VCAP::CloudController
           before_size = parsed_body['total_results']
 
           delete "/v2/spaces/#{@space_b.guid}"
-          expect(last_response.status).to eq(204)
+          expect(last_response).to have_status_code(204)
 
           get "/v2/events?q=space_guid:#{@space_b.guid}"
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           parsed_body = MultiJson.load(last_response.body)
           after_size = parsed_body['total_results']
           # 1 more event for the deletion.
@@ -152,10 +152,10 @@ module VCAP::CloudController
 
           # Have to delete the space as well -- but this adds only one event.
           delete "/v2/organizations/#{@org_a.guid}?recursive=true&async=false"
-          expect(last_response.status).to eq(204)
+          expect(last_response).to have_status_code(204)
 
           get "/v2/events?q=organization_guid:#{@org_a.guid}"
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           parsed_body = MultiJson.load(last_response.body)
           after_size = parsed_body['total_results']
           # 1 more event for the deletion.

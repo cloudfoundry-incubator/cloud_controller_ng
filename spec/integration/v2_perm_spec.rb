@@ -67,7 +67,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
     it 'creates the org roles' do
       post '/v2/organizations', { name: SecureRandom.uuid }.to_json
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       json_body = JSON.parse(last_response.body)
       org_id = json_body['metadata']['guid']
@@ -83,11 +83,11 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
       body = { name: SecureRandom.uuid }.to_json
       post '/v2/organizations', body
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       post '/v2/organizations', body
 
-      expect(last_response.status).to eq(400)
+      expect(last_response).to have_status_code(400)
 
       json_body = JSON.parse(last_response.body)
       expect(json_body['error_code']).to eq('CF-OrganizationNameTaken')
@@ -102,14 +102,14 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
         it 'deletes the org roles' do
           post '/v2/organizations', { name: SecureRandom.uuid }.to_json
 
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
 
           json_body = JSON.parse(last_response.body)
           org_id = json_body['metadata']['guid']
 
           delete "/v2/organizations/#{org_id}"
 
-          expect(last_response.status).to eq(204)
+          expect(last_response).to have_status_code(204)
 
           ORG_ROLES.each do |role|
             role_name = "org-#{role}-#{org_id}"
@@ -123,14 +123,14 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
         it 'deletes the org roles' do
           post '/v2/organizations', { name: SecureRandom.uuid }.to_json
 
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
 
           json_body = JSON.parse(last_response.body)
           org_id = json_body['metadata']['guid']
 
           delete "/v2/organizations/#{org_id}?async=true"
 
-          expect(last_response.status).to eq(202)
+          expect(last_response).to have_status_code(202)
 
           succeeded_jobs, failed_jobs = worker.work_off
           expect(succeeded_jobs).to be > 0
@@ -150,7 +150,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
         it 'alerts the user without deleting any roles' do
           post '/v2/organizations', { name: SecureRandom.uuid }.to_json
 
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
 
           json_body = JSON.parse(last_response.body)
           org_id = json_body['metadata']['guid']
@@ -160,13 +160,13 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
             organization_guid: org_id
           }.to_json
 
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
 
           json_body = JSON.parse(last_response.body)
 
           delete "/v2/organizations/#{org_id}?recursive=false"
 
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
 
           ORG_ROLES.each do |role|
             org_role_name = "org-#{role}-#{org_id}"
@@ -188,7 +188,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
           it 'deletes the roles recursively' do
             post '/v2/organizations', { name: SecureRandom.uuid }.to_json
 
-            expect(last_response.status).to eq(201)
+            expect(last_response).to have_status_code(201)
 
             json_body = JSON.parse(last_response.body)
             org_id = json_body['metadata']['guid']
@@ -198,13 +198,13 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
               organization_guid: org_id
             }.to_json
 
-            expect(last_response.status).to eq(201)
+            expect(last_response).to have_status_code(201)
 
             json_body = JSON.parse(last_response.body)
 
             delete "/v2/organizations/#{org_id}?recursive=true"
 
-            expect(last_response.status).to eq(204)
+            expect(last_response).to have_status_code(204)
 
             ORG_ROLES.each do |role|
               org_role_name = "org-#{role}-#{org_id}"
@@ -224,7 +224,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
           it 'deletes the roles recursively' do
             post '/v2/organizations', { name: SecureRandom.uuid }.to_json
 
-            expect(last_response.status).to eq(201)
+            expect(last_response).to have_status_code(201)
 
             json_body = JSON.parse(last_response.body)
             org_id = json_body['metadata']['guid']
@@ -234,13 +234,13 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
               organization_guid: org_id
             }.to_json
 
-            expect(last_response.status).to eq(201)
+            expect(last_response).to have_status_code(201)
 
             json_body = JSON.parse(last_response.body)
 
             delete "/v2/organizations/#{org_id}?recursive=true&async=true"
 
-            expect(last_response.status).to eq(202)
+            expect(last_response).to have_status_code(202)
 
             succeeded_jobs, failed_jobs = worker.work_off
             expect(succeeded_jobs).to be > 0
@@ -263,16 +263,16 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
 
       it 'alerts the user if the org does not exist' do
         post '/v2/organizations', { name: SecureRandom.uuid }.to_json
-        expect(last_response.status).to eq(201)
+        expect(last_response).to have_status_code(201)
 
         json_body = JSON.parse(last_response.body)
         org_id = json_body['metadata']['guid']
 
         delete "/v2/organizations/#{org_id}"
-        expect(last_response.status).to eq(204)
+        expect(last_response).to have_status_code(204)
 
         delete "/v2/organizations/#{org_id}"
-        expect(last_response.status).to eq(404)
+        expect(last_response).to have_status_code(404)
       end
     end
   end
@@ -286,7 +286,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
 
         before do
           post '/v2/organizations', { name: SecureRandom.uuid }.to_json
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
 
           json_body = JSON.parse(last_response.body)
           org_id = json_body['metadata']['guid']
@@ -297,7 +297,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
           expect(has_permission).to eq(false)
 
           put "/v2/organizations/#{org_id}/#{role}s/#{user_id}"
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
 
           has_permission = client.has_permission?(actor_id: user_id, namespace: issuer, action: "org.#{role}", resource: org_id)
           expect(has_permission).to eq(true)
@@ -308,10 +308,10 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
           expect(has_permission).to eq(false)
 
           put "/v2/organizations/#{org_id}/#{role}s/#{user_id}"
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
 
           put "/v2/organizations/#{org_id}/#{role}s/#{user_id}"
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
 
           has_permission = client.has_permission?(actor_id: user_id, namespace: issuer, action: "org.#{role}", resource: org_id)
           expect(has_permission).to eq(true)
@@ -335,7 +335,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
           client.assign_role(role_name: role_name, actor_id: user_id, namespace: issuer)
 
           delete "/v2/organizations/#{org.guid}/#{role}s", { 'username' => username }.to_json
-          expect(last_response.status).to eq(204)
+          expect(last_response).to have_status_code(204)
 
           has_permission = client.has_permission?(actor_id: user_id, namespace: issuer, action: "space.#{role}", resource: org.guid)
           expect(has_permission).to eq(false)
@@ -343,7 +343,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
 
         it "does nothing if the user does not have the org #{role} role" do
           delete "/v2/organizations/#{org.guid}/#{role}s/#{user_id}"
-          expect(last_response.status).to eq(204)
+          expect(last_response).to have_status_code(204)
         end
       end
     end
@@ -357,29 +357,29 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
 
     before do
       post '/v2/organizations', { name: SecureRandom.uuid }.to_json
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       json_body = JSON.parse(last_response.body)
       org1_id = json_body['metadata']['guid']
 
       post '/v2/organizations', { name: SecureRandom.uuid }.to_json
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       json_body = JSON.parse(last_response.body)
       org2_id = json_body['metadata']['guid']
 
       put "/v2/organizations/#{org1_id}/users/#{user_id}"
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       put "/v2/organizations/#{org2_id}/users/#{user_id}"
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       post '/v2/spaces', {
         name: SecureRandom.uuid,
         organization_guid: org1_id
       }.to_json
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       json_body = JSON.parse(last_response.body)
       org1_space_id = json_body['metadata']['guid']
@@ -389,23 +389,23 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
         organization_guid: org2_id
       }.to_json
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       json_body = JSON.parse(last_response.body)
       org2_space_id = json_body['metadata']['guid']
 
       SPACE_ROLES.each do |role|
         put "/v2/spaces/#{org1_space_id}/#{role}s/#{user_id}"
-        expect(last_response.status).to eq(201)
+        expect(last_response).to have_status_code(201)
 
         put "/v2/spaces/#{org2_space_id}/#{role}s/#{user_id}"
-        expect(last_response.status).to eq(201)
+        expect(last_response).to have_status_code(201)
       end
     end
 
     it 'removes the user from all org and space roles for that org and no other' do
       delete "/v2/organizations/#{org1_id}/users?recursive=true", { 'username' => username }.to_json
-      expect(last_response.status).to eq(204)
+      expect(last_response).to have_status_code(204)
 
       has_permission = client.has_permission?(actor_id: user_id, namespace: issuer, action: 'org.user', resource: org1_id)
       expect(has_permission).to eq(false)
@@ -438,7 +438,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
           client.assign_role(role_name: role_name, actor_id: user_id, namespace: issuer)
 
           delete "/v2/organizations/#{org.guid}/#{role}s/#{user_id}"
-          expect(last_response.status).to eq(204)
+          expect(last_response).to have_status_code(204)
 
           has_permission = client.has_permission?(actor_id: user_id, namespace: issuer, action: "org.#{role}", resource: org.guid)
           expect(has_permission).to eq(false)
@@ -446,7 +446,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
 
         it "does nothing if the user does not have the org #{role} role" do
           delete "/v2/organizations/#{org.guid}/#{role}s/#{user_id}"
-          expect(last_response.status).to eq(204)
+          expect(last_response).to have_status_code(204)
         end
       end
     end
@@ -461,7 +461,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
         organization_guid: org.guid
       }.to_json
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       json_body = JSON.parse(last_response.body)
       space_id = json_body['metadata']['guid']
@@ -480,14 +480,14 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
         organization_guid: org.guid
       }.to_json
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       post '/v2/spaces', {
         name: space_name,
         organization_guid: org.guid
       }.to_json
 
-      expect(last_response.status).to eq(400)
+      expect(last_response).to have_status_code(400)
 
       json_body = JSON.parse(last_response.body)
       expect(json_body['error_code']).to eq('CF-SpaceNameTaken')
@@ -506,14 +506,14 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
           organization_guid: org.guid
         }.to_json
 
-        expect(last_response.status).to eq(201)
+        expect(last_response).to have_status_code(201)
 
         json_body = JSON.parse(last_response.body)
         space_id = json_body['metadata']['guid']
 
         delete "/v2/spaces/#{space_id}"
 
-        expect(last_response.status).to eq(204)
+        expect(last_response).to have_status_code(204)
 
         SPACE_ROLES.each do |role|
           role_name = "space-#{role}-#{space_id}"
@@ -530,14 +530,14 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
           organization_guid: org.guid
         }.to_json
 
-        expect(last_response.status).to eq(201)
+        expect(last_response).to have_status_code(201)
 
         json_body = JSON.parse(last_response.body)
         space_id = json_body['metadata']['guid']
 
         delete "/v2/spaces/#{space_id}?async=true"
 
-        expect(last_response.status).to eq(202)
+        expect(last_response).to have_status_code(202)
 
         succeeded_jobs, failed_jobs = worker.work_off
         expect(succeeded_jobs).to be > 0
@@ -556,16 +556,16 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
         organization_guid: org.guid
       }.to_json
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       json_body = JSON.parse(last_response.body)
       space_id = json_body['metadata']['guid']
 
       delete "/v2/spaces/#{space_id}"
-      expect(last_response.status).to eq(204)
+      expect(last_response).to have_status_code(204)
 
       delete "/v2/spaces/#{space_id}"
-      expect(last_response.status).to eq(404)
+      expect(last_response).to have_status_code(404)
     end
   end
 
@@ -574,7 +574,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
     before do
       post '/v2/organizations', { name: SecureRandom.uuid }.to_json
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       json_body = JSON.parse(last_response.body)
       org_id = json_body['metadata']['guid']
@@ -584,12 +584,12 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
         organization_guid: org_id
       }.to_json
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
       json_body = JSON.parse(last_response.body)
       space_id = json_body['metadata']['guid']
 
       put "/v2/organizations/#{org_id}/users/#{user_id}"
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
     end
 
     SPACE_ROLES.each do |role|
@@ -599,7 +599,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
           expect(has_permission).to eq(false)
 
           put "/v2/spaces/#{space_id}/#{role}s/#{user_id}"
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
 
           has_permission = client.has_permission?(actor_id: user_id, namespace: issuer, action: "space.#{role}", resource: space_id)
           expect(has_permission).to eq(true)
@@ -610,10 +610,10 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
           expect(has_permission).to eq(false)
 
           put "/v2/spaces/#{space_id}/#{role}s/#{user_id}"
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
 
           put "/v2/spaces/#{space_id}/#{role}s/#{user_id}"
-          expect(last_response.status).to eq(201)
+          expect(last_response).to have_status_code(201)
 
           has_permission = client.has_permission?(actor_id: user_id, namespace: issuer, action: "space.#{role}", resource: space_id)
           expect(has_permission).to eq(true)
@@ -642,7 +642,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
           client.assign_role(actor_id: user_id, namespace: issuer, role_name: role_name)
 
           delete "/v2/spaces/#{space.guid}/#{role}s", { 'username' => username }.to_json
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           has_permission = client.has_permission?(actor_id: user_id, namespace: issuer, action: "space.#{role}", resource: space.guid)
           expect(has_permission).to eq(false)
@@ -671,7 +671,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
           client.assign_role(actor_id: user_id, namespace: issuer, role_name: role_name)
 
           delete "/v2/spaces/#{space.guid}/#{role}s/#{user_id}"
-          expect(last_response.status).to eq(204)
+          expect(last_response).to have_status_code(204)
 
           has_permission = client.has_permission?(actor_id: user_id, namespace: issuer, action: "space.#{role}", resource: space.guid)
           expect(has_permission).to eq(false)
@@ -679,7 +679,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
 
         it "does nothing if the user does not have the space #{role} role" do
           delete "/v2/spaces/#{space.guid}/#{role}s/#{user_id}"
-          expect(last_response.status).to eq(204)
+          expect(last_response).to have_status_code(204)
         end
       end
     end
@@ -691,7 +691,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
     }.to_json
 
     post('/v2/users', body)
-    expect(last_response.status).to eq(201)
+    expect(last_response).to have_status_code(201)
 
     json_body = JSON.parse(last_response.body)
     json_body['metadata']['guid']
@@ -704,7 +704,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
 
     post '/v2/organizations', body
 
-    expect(last_response.status).to eq(201)
+    expect(last_response).to have_status_code(201)
 
     response.json_body['metadata']['guid']
   end
@@ -723,7 +723,7 @@ RSpec.describe 'Perm', type: :integration, skip: skip_perm_tests, perm: skip_per
 
     post "/v2/organizations/#{org_guid}/spaces", body
 
-    expect(last_response.status).to eq(201)
+    expect(last_response).to have_status_code(201)
 
     response.json_body['metadata']['guid']
   end

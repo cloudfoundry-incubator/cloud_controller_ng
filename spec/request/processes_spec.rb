@@ -105,7 +105,7 @@ RSpec.describe 'Processes' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
 
@@ -123,7 +123,7 @@ RSpec.describe 'Processes' do
             'previous'      => nil,
           }
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           parsed_response = MultiJson.load(last_response.body)
 
@@ -164,7 +164,7 @@ RSpec.describe 'Processes' do
             'previous'      => nil,
           }
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           parsed_response = MultiJson.load(last_response.body)
 
@@ -203,7 +203,7 @@ RSpec.describe 'Processes' do
             'previous'      => nil,
           }
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           parsed_response = MultiJson.load(last_response.body)
 
@@ -238,7 +238,7 @@ RSpec.describe 'Processes' do
             'previous'      => nil,
           }
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           parsed_response = MultiJson.load(last_response.body)
 
@@ -261,7 +261,7 @@ RSpec.describe 'Processes' do
             'previous'      => nil,
           }
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           parsed_response = MultiJson.load(last_response.body)
 
@@ -314,7 +314,7 @@ RSpec.describe 'Processes' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
 
@@ -329,7 +329,7 @@ RSpec.describe 'Processes' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response['command']).to eq('[PRIVATE DATA HIDDEN]')
     end
   end
@@ -424,7 +424,7 @@ RSpec.describe 'Processes' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response).to be_a_response_like(expected_response)
       end
     end
@@ -435,7 +435,7 @@ RSpec.describe 'Processes' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response).to be_a_response_like(expected_response)
       end
     end
@@ -495,7 +495,7 @@ RSpec.describe 'Processes' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
 
       process.reload
@@ -578,7 +578,7 @@ RSpec.describe 'Processes' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(202)
+      expect(last_response).to have_status_code(202)
       expect(parsed_response).to be_a_response_like(expected_response)
 
       process.reload
@@ -621,7 +621,7 @@ RSpec.describe 'Processes' do
 
       delete "/v3/processes/#{process.guid}/instances/0", nil, developer_headers
 
-      expect(last_response.status).to eq(204)
+      expect(last_response).to have_status_code(204)
 
       events        = VCAP::CloudController::Event.where(actor: developer.guid).all
       process_event = events.find { |e| e.type == 'audit.app.process.terminate_instance' }
@@ -743,7 +743,7 @@ RSpec.describe 'Processes' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
 
@@ -761,7 +761,7 @@ RSpec.describe 'Processes' do
             'previous'      => nil,
           }
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           parsed_response = MultiJson.load(last_response.body)
 
@@ -784,7 +784,7 @@ RSpec.describe 'Processes' do
             'previous'      => nil,
           }
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           parsed_response = MultiJson.load(last_response.body)
 
@@ -837,7 +837,7 @@ RSpec.describe 'Processes' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
 
@@ -852,7 +852,7 @@ RSpec.describe 'Processes' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response['command']).to eq('[PRIVATE DATA HIDDEN]')
     end
   end
@@ -913,7 +913,7 @@ RSpec.describe 'Processes' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
 
       process.reload
@@ -998,7 +998,7 @@ RSpec.describe 'Processes' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(202)
+      expect(last_response).to have_status_code(202)
       expect(parsed_response).to be_a_response_like(expected_response)
 
       process.reload
@@ -1041,7 +1041,7 @@ RSpec.describe 'Processes' do
 
       delete "/v3/apps/#{app_model.guid}/processes/web/instances/0", nil, developer_headers
 
-      expect(last_response.status).to eq(204)
+      expect(last_response).to have_status_code(204)
 
       events        = VCAP::CloudController::Event.where(actor: developer.guid).all
       process_event = events.find { |e| e.type == 'audit.app.process.terminate_instance' }

@@ -40,7 +40,7 @@ RSpec.describe 'App visibility between API versions' do
 
       get "/v2/apps/#{app_guid}", nil, user_header
 
-      expect(last_response.status).to eq(200), last_response.body
+      expect(last_response).to have_status_code(200), last_response.body
     end
   end
 end

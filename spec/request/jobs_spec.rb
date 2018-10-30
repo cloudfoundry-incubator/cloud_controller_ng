@@ -29,7 +29,7 @@ RSpec.describe 'Jobs' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
   end

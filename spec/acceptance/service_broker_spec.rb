@@ -118,7 +118,7 @@ RSpec.describe 'Service Broker' do
           auth_password: 'password'
         }.to_json, admin_headers)
 
-        expect(last_response.status).to eql(502)
+        expect(last_response).to have_status_code(502)
         expect(decoded_response['code']).to eql(270012)
         expect(decoded_response['description']).to eql("Service broker catalog is invalid: \nService MySQL\n  At least one plan is required\n")
       end
@@ -227,7 +227,7 @@ RSpec.describe 'Service Broker' do
           auth_password: 'password'
         }.to_json, admin_headers)
 
-        expect(last_response.status).to eql(502)
+        expect(last_response).to have_status_code(502)
         expect(decoded_response['code']).to eql(270012)
         expect(decoded_response['description']).to eql(
           "Service broker catalog is invalid: \n" \
@@ -360,7 +360,7 @@ RSpec.describe 'Service Broker' do
                     auth_password: 'password'
                   }.to_json, admin_headers)
 
-                  expect(last_response.status).to eql(201)
+                  expect(last_response).to have_status_code(201)
                 end
               end
             end
@@ -381,7 +381,7 @@ RSpec.describe 'Service Broker' do
                 auth_password: 'password'
               }.to_json, admin_headers)
 
-              expect(last_response.status).to eql(201)
+              expect(last_response).to have_status_code(201)
             end
           end
 
@@ -403,7 +403,7 @@ RSpec.describe 'Service Broker' do
                     auth_password: 'password'
                   }.to_json, admin_headers)
 
-                  expect(last_response.status).to eql(502)
+                  expect(last_response).to have_status_code(502)
                   expect(decoded_response['code']).to eql(270012)
                   expect(decoded_response['description']).to eql(
                     "Service broker catalog is invalid: \n" \
@@ -432,7 +432,7 @@ RSpec.describe 'Service Broker' do
                 auth_password: 'password'
               }.to_json, admin_headers)
 
-              expect(last_response.status).to eql(502)
+              expect(last_response).to have_status_code(502)
               expect(decoded_response['code']).to eql(270012)
               expect(decoded_response['description']).to eql(
                 "Service broker catalog is invalid: \n" \
@@ -470,7 +470,7 @@ RSpec.describe 'Service Broker' do
                 auth_password: 'password'
               }.to_json, admin_headers)
 
-              expect(last_response.status).to eql(502)
+              expect(last_response).to have_status_code(502)
               expect(decoded_response['code']).to eql(270012)
               expect(decoded_response['description']).to eql(
                 "Service broker catalog is invalid: \n" \
@@ -500,7 +500,7 @@ RSpec.describe 'Service Broker' do
                 auth_password: 'password'
               }.to_json, admin_headers)
 
-              expect(last_response.status).to eql(502)
+              expect(last_response).to have_status_code(502)
               expect(decoded_response['code']).to eql(270012)
               expect(decoded_response['description']).to eql(
                 "Service broker catalog is invalid: \n" \
@@ -538,7 +538,7 @@ RSpec.describe 'Service Broker' do
                 auth_password: 'password'
               }.to_json, admin_headers)
 
-              expect(last_response.status).to eql(502)
+              expect(last_response).to have_status_code(502)
               expect(decoded_response['code']).to eql(270012)
               expect(decoded_response['description']).to eql(
                 "Service broker catalog is invalid: \n" \
@@ -566,7 +566,7 @@ RSpec.describe 'Service Broker' do
                 auth_password: 'password'
               }.to_json, admin_headers)
 
-              expect(last_response.status).to eql(502)
+              expect(last_response).to have_status_code(502)
               expect(decoded_response['code']).to eql(270012)
               expect(decoded_response['description']).to eql(
                 "Service broker catalog is invalid: \n" \
@@ -683,7 +683,7 @@ RSpec.describe 'Service Broker' do
       end
 
       it 'registers all schemas successfully' do
-        expect(last_response.status).to eq(201)
+        expect(last_response).to have_status_code(201)
         get('/v2/service_plans', {}.to_json, admin_headers)
         resources = JSON.parse(last_response.body)['resources']
 

@@ -36,7 +36,7 @@ RSpec.describe 'Spaces' do
 
       created_space = VCAP::CloudController::Space.last
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       expect(parsed_response).to be_a_response_like(
         {
@@ -61,7 +61,7 @@ RSpec.describe 'Spaces' do
   describe 'GET /v3/spaces/:guid' do
     it 'returns the requested space' do
       get "/v3/spaces/#{space1.guid}", nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -91,7 +91,7 @@ RSpec.describe 'Spaces' do
   describe 'GET /v3/spaces' do
     it 'returns a paginated list of spaces the user has access to' do
       get '/v3/spaces?per_page=2', nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(

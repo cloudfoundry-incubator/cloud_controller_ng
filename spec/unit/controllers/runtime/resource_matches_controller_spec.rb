@@ -14,7 +14,7 @@ module VCAP::CloudController
 
       set_current_user(user)
       send(verb, path, req, headers_for(user))
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       resp = MultiJson.load(last_response.body)
       expect(resp).to eq(matches)
@@ -44,7 +44,7 @@ module VCAP::CloudController
 
             put '/v2/resource_match', 'invalid json'
 
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
             expect(last_response.body).to match(/MessageParseError/)
           end
         end
@@ -55,7 +55,7 @@ module VCAP::CloudController
 
             put '/v2/resource_match', 'null'
 
-            expect(last_response.status).to eq(422)
+            expect(last_response).to have_status_code(422)
             expect(last_response.body).to match(/UnprocessableEntity/)
             expect(last_response.body).to match(/must be an array./)
           end
@@ -72,7 +72,7 @@ module VCAP::CloudController
         set_current_user_as_admin
 
         put '/v2/resource_match', '[]'
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
       end
 
       it 'returns FeatureDisabled unless the user is an admin' do
@@ -80,7 +80,7 @@ module VCAP::CloudController
 
         put '/v2/resource_match', '[]'
 
-        expect(last_response.status).to eq(403)
+        expect(last_response).to have_status_code(403)
         expect(decoded_response['error_code']).to match(/FeatureDisabled/)
         expect(decoded_response['description']).to match(/Feature Disabled/)
       end
@@ -126,7 +126,7 @@ module VCAP::CloudController
 
         it 'retuns HTTP status 500' do
           put '/v2/resource_match', '[]'
-          expect(last_response.status).to eq(500)
+          expect(last_response).to have_status_code(500)
         end
 
         it 'returns an error description' do

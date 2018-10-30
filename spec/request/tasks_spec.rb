@@ -49,7 +49,7 @@ RSpec.describe 'Tasks' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like({
         'pagination' => {
           'total_results' => 3,
@@ -159,7 +159,7 @@ RSpec.describe 'Tasks' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['resources'].map { |r| r['guid'] }).to eq([task1.guid])
         expect(parsed_response['pagination']).to be_a_response_like(
           {
@@ -222,7 +222,7 @@ RSpec.describe 'Tasks' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
 
@@ -244,7 +244,7 @@ RSpec.describe 'Tasks' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).not_to have_key('command')
     end
   end
@@ -260,7 +260,7 @@ RSpec.describe 'Tasks' do
 
       put "/v3/tasks/#{task.guid}/cancel", nil, developer_headers
 
-      expect(last_response.status).to eq(202)
+      expect(last_response).to have_status_code(202)
       parsed_body = JSON.parse(last_response.body)
       expect(parsed_body['guid']).to eq(task.guid)
       expect(parsed_body['name']).to eq('task')
@@ -295,7 +295,7 @@ RSpec.describe 'Tasks' do
 
       post "/v3/tasks/#{task.guid}/actions/cancel", nil, developer_headers
 
-      expect(last_response.status).to eq(202)
+      expect(last_response).to have_status_code(202)
       parsed_body = JSON.parse(last_response.body)
       expect(parsed_body['guid']).to eq(task.guid)
       expect(parsed_body['name']).to eq('task')
@@ -421,7 +421,7 @@ RSpec.describe 'Tasks' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
 
@@ -455,7 +455,7 @@ RSpec.describe 'Tasks' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['resources'].map { |r| r['guid'] }).to eq([expected_task.guid])
         expect(parsed_response['pagination']).to be_a_response_like(
           {
@@ -481,7 +481,7 @@ RSpec.describe 'Tasks' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['resources'].map { |r| r['guid'] }).to eq([expected_task.guid])
         expect(parsed_response['pagination']).to be_a_response_like(
           {
@@ -507,7 +507,7 @@ RSpec.describe 'Tasks' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['resources'].map { |r| r['guid'] }).to eq([expected_task.guid])
         expect(parsed_response['pagination']).to be_a_response_like(
           {
@@ -576,7 +576,7 @@ RSpec.describe 'Tasks' do
         }
       }
 
-      expect(last_response.status).to eq(202)
+      expect(last_response).to have_status_code(202)
       expect(parsed_response).to be_a_response_like(expected_response)
       expect(VCAP::CloudController::TaskModel.find(guid: guid)).to be_present
 
@@ -624,7 +624,7 @@ RSpec.describe 'Tasks' do
         parsed_response = MultiJson.load(last_response.body)
         guid            = parsed_response['guid']
 
-        expect(last_response.status).to eq(202)
+        expect(last_response).to have_status_code(202)
         expect(parsed_response['droplet_guid']).to eq(non_assigned_droplet.guid)
         expect(parsed_response['links']['droplet']['href']).to eq("#{link_prefix}/v3/droplets/#{non_assigned_droplet.guid}")
         expect(VCAP::CloudController::TaskModel.find(guid: guid)).to be_present

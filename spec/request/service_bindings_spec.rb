@@ -76,7 +76,7 @@ RSpec.describe 'v3 service bindings' do
           }
         }
 
-        expect(last_response.status).to eq(201), last_response.body
+        expect(last_response).to have_status_code(201), last_response.body
         expect(parsed_response).to be_a_response_like(expected_response)
         expect(VCAP::CloudController::ServiceBinding.find(guid: guid)).to be_present
 
@@ -173,7 +173,7 @@ RSpec.describe 'v3 service bindings' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(201)
+        expect(last_response).to have_status_code(201)
         expect(parsed_response).to be_a_response_like(expected_response)
         expect(VCAP::CloudController::ServiceBinding.find(guid: guid)).to be_present
       end
@@ -195,7 +195,7 @@ RSpec.describe 'v3 service bindings' do
       it 'deletes the service binding and returns a 204' do
         delete "/v3/service_bindings/#{service_binding.guid}", nil, user_headers
 
-        expect(last_response.status).to eq(204)
+        expect(last_response).to have_status_code(204)
         expect(service_binding.exists?).to be_falsey
 
         event = VCAP::CloudController::Event.last
@@ -223,7 +223,7 @@ RSpec.describe 'v3 service bindings' do
       it 'deletes the service binding and returns a 204' do
         delete "/v3/service_bindings/#{service_binding.guid}", nil, user_headers
 
-        expect(last_response.status).to eq(204)
+        expect(last_response).to have_status_code(204)
         expect(service_binding.exists?).to be_falsey
 
         event = VCAP::CloudController::Event.last
@@ -292,7 +292,7 @@ RSpec.describe 'v3 service bindings' do
         }
       }
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
 
@@ -305,7 +305,7 @@ RSpec.describe 'v3 service bindings' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response['data']['credentials']).to eq({ 'redacted_message' => '[PRIVATE DATA HIDDEN]' })
     end
   end
@@ -407,7 +407,7 @@ RSpec.describe 'v3 service bindings' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
 
@@ -437,7 +437,7 @@ RSpec.describe 'v3 service bindings' do
 
           parsed_response = MultiJson.load(last_response.body)
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(parsed_response['resources'].map { |r| r['guid'] }).to eq([another_apps_service_binding.guid, another_apps_service_binding2.guid])
           expect(parsed_response['pagination']).to be_a_response_like(
             {
@@ -458,7 +458,7 @@ RSpec.describe 'v3 service bindings' do
 
           parsed_response = MultiJson.load(last_response.body)
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(parsed_response['resources'].map { |r| r['guid'] }).to eq([service_binding1.guid, service_binding2.guid])
           expect(parsed_response['pagination']).to be_a_response_like(
             {

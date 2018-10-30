@@ -15,7 +15,7 @@ RSpec.describe 'Internal Log Access Endpoint' do
     context 'when the user has access to view the logs for the app' do
       it 'returns 200' do
         get "/internal/v4/log_access/#{app_model.guid}", nil, user_header
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
       end
     end
   end

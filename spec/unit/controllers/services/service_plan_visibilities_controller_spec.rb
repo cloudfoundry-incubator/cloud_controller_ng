@@ -100,7 +100,7 @@ module VCAP::CloudController
       it 'updates the service plan visibility' do
         put "/v2/service_plan_visibilities/#{visibility.guid}", MultiJson.dump({ organization_guid: new_organization.guid })
 
-        expect(last_response.status).to eq(201)
+        expect(last_response).to have_status_code(201)
         service_plan_visibility = ServicePlanVisibility.find(guid: visibility.guid)
         expect(service_plan_visibility.organization_guid).to eq new_organization.guid
       end
@@ -131,7 +131,7 @@ module VCAP::CloudController
       it 'deletes the service plan visibility' do
         delete "/v2/service_plan_visibilities/#{visibility.guid}"
 
-        expect(last_response.status).to eq(204)
+        expect(last_response).to have_status_code(204)
         expect(ServicePlanVisibility.find(guid: visibility.guid)).to be_nil
       end
 

@@ -29,7 +29,7 @@ RSpec.describe 'Organizations' do
 
       created_org = VCAP::CloudController::Organization.last
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
 
       expect(parsed_response).to be_a_response_like(
         {
@@ -48,7 +48,7 @@ RSpec.describe 'Organizations' do
   describe 'GET /v3/organizations' do
     it 'returns a paginated list of orgs the user has access to' do
       get '/v3/organizations?per_page=2', nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -106,7 +106,7 @@ RSpec.describe 'Organizations' do
 
     it 'returns a paginated list of orgs entitled to the isolation segment' do
       get "/v3/isolation_segments/#{isolation_segment1.guid}/organizations?per_page=2", nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -178,7 +178,7 @@ RSpec.describe 'Organizations' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
   end
@@ -215,7 +215,7 @@ RSpec.describe 'Organizations' do
 
       parsed_response = MultiJson.load(last_response.body)
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
 
       organization1.reload

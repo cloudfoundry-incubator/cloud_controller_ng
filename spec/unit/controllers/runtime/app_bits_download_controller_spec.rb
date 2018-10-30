@@ -14,7 +14,7 @@ module VCAP::CloudController
 
         it 'should return 404 for an app without a package' do
           get "/v2/apps/#{process.app.guid}/download"
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
         end
 
         context 'when the package is valid' do
@@ -27,13 +27,13 @@ module VCAP::CloudController
 
           it 'should return 302' do
             get "/v2/apps/#{process.app.guid}/download"
-            expect(last_response.status).to eq(302)
+            expect(last_response).to have_status_code(302)
           end
         end
 
         it 'should return 404 for non-existent apps' do
           get '/v2/apps/abcd/download'
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
         end
       end
 
@@ -44,7 +44,7 @@ module VCAP::CloudController
 
         it 'should return 403' do
           get "/v2/apps/#{process.app.guid}/download"
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
         end
       end
     end

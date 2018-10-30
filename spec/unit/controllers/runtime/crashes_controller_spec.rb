@@ -32,7 +32,7 @@ module VCAP::CloudController
 
           get "/v2/apps/#{process.app.guid}/crashes"
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(MultiJson.load(last_response.body)).to eq(expected)
           expect(instances_reporters).to have_received(:crashed_instances_for_app).with(
             satisfy { |requested_app| requested_app.guid == process.app.guid })
@@ -45,7 +45,7 @@ module VCAP::CloudController
 
           get "/v2/apps/#{process.app.guid}/crashes"
 
-          expect(last_response.status).to eq(403)
+          expect(last_response).to have_status_code(403)
         end
       end
     end

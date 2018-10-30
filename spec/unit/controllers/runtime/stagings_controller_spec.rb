@@ -5,20 +5,20 @@ module VCAP::CloudController
     context 'when a content-md5 is specified' do
       it 'returns a 400 if the value does not match the md5 of the body' do
         post url, upload_req, 'HTTP_CONTENT_MD5' => 'the-wrong-md5'
-        expect(last_response.status).to eq(400)
+        expect(last_response).to have_status_code(400)
       end
 
       it 'succeeds if the value matches the md5 of the body' do
         content_md5 = digester.digest(file_content)
         post url, upload_req, 'HTTP_CONTENT_MD5' => content_md5
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
       end
     end
 
     context 'with an invalid app' do
       it 'returns 404' do
         post bad_droplet_url, upload_req
-        expect(last_response.status).to eq(404)
+        expect(last_response).to have_status_code(404)
       end
 
       it 'does not add a job' do
@@ -188,7 +188,7 @@ module VCAP::CloudController
       it 'should return 401 for bad credentials' do
         authorize 'hacker', 'sw0rdf1sh'
         send(verb, "/staging/#{path}/#{process.guid}")
-        expect(last_response.status).to eq(401)
+        expect(last_response).to have_status_code(401)
       end
     end
 
@@ -199,7 +199,7 @@ module VCAP::CloudController
       it 'returns the job' do
         get "/internal/v4/staging_jobs/#{job_guid}"
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(decoded_response(symbolize_keys: true)).to eq(StagingJobPresenter.new(job, 'https').to_hash)
         expect(decoded_response['metadata']['guid']).to eq(job_guid)
       end
@@ -229,7 +229,7 @@ module VCAP::CloudController
 
         it 'succeeds for valid packages' do
           get "/staging/packages/#{package.guid}"
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           expect(last_response.headers['X-Accel-Redirect']).to eq("/cc-packages/gu/id/#{package.guid}")
         end
@@ -244,7 +244,7 @@ module VCAP::CloudController
 
         it 'succeeds for valid packages' do
           get "/staging/packages/#{package.guid}"
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           expect(last_response.body).to eq('test blob contents')
         end
@@ -253,17 +253,17 @@ module VCAP::CloudController
       it 'fails if blobstore is not local' do
         allow_any_instance_of(CloudController::Blobstore::FogClient).to receive(:local?).and_return(false)
         get '/staging/packages/some-guid'
-        expect(last_response.status).to eq(400)
+        expect(last_response).to have_status_code(400)
       end
 
       it 'returns an error for non-existent packages' do
         get '/staging/packages/bad-guid'
-        expect(last_response.status).to eq(404)
+        expect(last_response).to have_status_code(404)
       end
 
       it 'returns an error for an package without bits' do
         get "/staging/packages/#{package_without_bits.guid}"
-        expect(last_response.status).to eq(404)
+        expect(last_response).to have_status_code(404)
       end
 
       include_examples 'staging bad auth', :get, 'packages'
@@ -342,7 +342,7 @@ module VCAP::CloudController
       context 'with a valid app' do
         it 'returns 200' do
           post "/internal/v4/buildpack_cache/#{stack}/#{app_model.guid}/upload", upload_req
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
         end
 
         it 'stores file path in handle.buildpack_cache_upload_path' do
@@ -364,13 +364,13 @@ module VCAP::CloudController
         context 'when a content-md5 is specified' do
           it 'returns a 400 if the value does not match the md5 of the body' do
             post "/internal/v4/buildpack_cache/#{stack}/#{app_model.guid}/upload", upload_req, 'HTTP_CONTENT_MD5' => 'the-wrong-md5'
-            expect(last_response.status).to eq(400)
+            expect(last_response).to have_status_code(400)
           end
 
           it 'succeeds if the value matches the md5 of the body' do
             content_md5 = digester.digest(file_content)
             post "/internal/v4/buildpack_cache/#{stack}/#{app_model.guid}/upload", upload_req, 'HTTP_CONTENT_MD5' => content_md5
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
           end
         end
       end
@@ -378,7 +378,7 @@ module VCAP::CloudController
       context 'with an invalid package' do
         it 'returns 404' do
           post '/internal/v4/buildpack_cache/bad-stack-app/upload', upload_req
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
         end
 
         context 'when the upload path is nil' do
@@ -424,7 +424,7 @@ module VCAP::CloudController
             )
 
             make_request
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             expect(last_response.headers['X-Accel-Redirect']).to match("/cc-droplets/.*/#{app_model.guid}/#{stack}")
           end
         end
@@ -441,7 +441,7 @@ module VCAP::CloudController
             )
 
             make_request
-            expect(last_response.status).to eq(200)
+            expect(last_response).to have_status_code(200)
             expect(last_response.body).to eq('droplet contents')
           end
         end
@@ -450,14 +450,14 @@ module VCAP::CloudController
       context 'with a valid buildpack cache but no file' do
         it 'should return an error' do
           make_request
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_status_code(400)
         end
       end
 
       context 'with an invalid buildpack cache' do
         it 'should return an error' do
           make_request('bad_guid')
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_status_code(404)
         end
       end
     end
@@ -483,7 +483,7 @@ module VCAP::CloudController
           upload_droplet
 
           get "/staging/v3/droplets/#{droplet.guid}/download"
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           droplet.reload
           expect(last_response.headers['X-Accel-Redirect']).to eq("/cc-droplets/gu/id/#{droplet.blobstore_key}")
@@ -497,7 +497,7 @@ module VCAP::CloudController
           encoded_expected_body = Base64.encode64(upload_droplet)
 
           get "/staging/v3/droplets/#{droplet.guid}/download"
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
 
           encoded_actual_body = Base64.encode64(last_response.body)
           expect(encoded_actual_body).to eq(encoded_expected_body)
@@ -507,12 +507,12 @@ module VCAP::CloudController
       it 'fails if blobstore is not local' do
         allow_any_instance_of(CloudController::Blobstore::FogClient).to receive(:local?).and_return(false)
         get '/staging/v3/droplets/some-guid/download'
-        expect(last_response.status).to eq(400)
+        expect(last_response).to have_status_code(400)
       end
 
       it 'returns an error for non-existent droplets' do
         get '/staging/v3/droplets/bad-guid/download'
-        expect(last_response.status).to eq(404)
+        expect(last_response).to have_status_code(404)
       end
 
       include_examples 'staging bad auth', :get, 'droplets'

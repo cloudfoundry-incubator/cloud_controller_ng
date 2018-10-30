@@ -94,7 +94,7 @@ RSpec.describe 'Builds' do
           }
         }
 
-      expect(last_response.status).to eq(201)
+      expect(last_response).to have_status_code(201)
       expect(parsed_response).to be_a_response_like(expected_response)
 
       event = VCAP::CloudController::Event.last
@@ -166,7 +166,7 @@ RSpec.describe 'Builds' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['resources']).to include(hash_including('guid' => build.guid))
         expect(parsed_response['resources']).to include(hash_including('guid' => second_build.guid))
         expect(parsed_response).to be_a_response_like({
@@ -302,7 +302,7 @@ RSpec.describe 'Builds' do
           }
         }
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response).to be_a_response_like(expected_response)
     end
   end

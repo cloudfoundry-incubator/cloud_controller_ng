@@ -39,7 +39,7 @@ RSpec.describe 'Droplets' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response).to be_a_response_like({
           'guid'               => droplet_model.guid,
           'state'              => VCAP::CloudController::DropletModel::STAGED_STATE,
@@ -74,7 +74,7 @@ RSpec.describe 'Droplets' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['process_types']).to eq({ 'redacted_message' => '[PRIVATE DATA HIDDEN]' })
         expect(parsed_response['execution_metadata']).to eq('[PRIVATE DATA HIDDEN]')
       end
@@ -99,7 +99,7 @@ RSpec.describe 'Droplets' do
 
         parsed_response = MultiJson.load(last_response.body)
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response).to be_a_response_like({
           'guid'               => droplet_model.guid,
           'state'              => VCAP::CloudController::DropletModel::STAGED_STATE,
@@ -175,7 +175,7 @@ RSpec.describe 'Droplets' do
 
     it 'list all droplets with a buildpack lifecycle' do
       get "/v3/droplets?order_by=#{order_by}&per_page=#{per_page}", nil, developer_headers
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response['resources']).to include(hash_including('guid' => droplet1.guid))
       expect(parsed_response['resources']).to include(hash_including('guid' => droplet2.guid))
       expect(parsed_response).to be_a_response_like({
@@ -257,7 +257,7 @@ RSpec.describe 'Droplets' do
       it 'filters by states' do
         get '/v3/droplets?states=STAGED,FAILED', nil, developer_headers
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['pagination']).to be_a_response_like(
           {
             'total_results' => 3,
@@ -276,7 +276,7 @@ RSpec.describe 'Droplets' do
       it 'filters by app_guids' do
         get "/v3/droplets?app_guids=#{app_model.guid}", nil, developer_headers
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['pagination']).to be_a_response_like(
           {
             'total_results' => 2,
@@ -294,7 +294,7 @@ RSpec.describe 'Droplets' do
       it 'filters by guids' do
         get "/v3/droplets?guids=#{droplet1.guid}%2C#{droplet3.guid}", nil, developer_headers
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['pagination']).to be_a_response_like(
           {
             'total_results' => 2,
@@ -315,7 +315,7 @@ RSpec.describe 'Droplets' do
       it 'filters by organization guids' do
         get "/v3/droplets?organization_guids=#{organization1.guid}", nil, developer_headers
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['pagination']).to be_a_response_like(
           {
             'total_results' => 3,
@@ -333,7 +333,7 @@ RSpec.describe 'Droplets' do
       it 'filters by space guids that the developer has access to' do
         get "/v3/droplets?space_guids=#{space.guid}%2C#{space2.guid}", nil, developer_headers
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         expect(parsed_response['pagination']).to be_a_response_like(
           {
             'total_results' => 3,
@@ -360,12 +360,12 @@ RSpec.describe 'Droplets' do
     it 'deletes a droplet asynchronously' do
       delete "/v3/droplets/#{droplet.guid}", nil, developer_headers
 
-      expect(last_response.status).to eq(202)
+      expect(last_response).to have_status_code(202)
       expect(last_response.headers['Location']).to match(%r(http.+/v3/jobs/[a-fA-F0-9-]+))
 
       execute_all_jobs(expected_successes: 2, expected_failures: 0)
       get "/v3/droplets/#{droplet.guid}", {}, developer_headers
-      expect(last_response.status).to eq(404)
+      expect(last_response).to have_status_code(404)
     end
   end
 
@@ -424,7 +424,7 @@ RSpec.describe 'Droplets' do
         it 'returns only the current droplet' do
           get "/v3/apps/#{app_model.guid}/droplets?current=true", nil, developer_headers
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(parsed_response['pagination']).to be_a_response_like(
             {
               'total_results' => 1,
@@ -448,7 +448,7 @@ RSpec.describe 'Droplets' do
         it 'returns an empty list' do
           get "/v3/apps/#{app_model.guid}/droplets?current=true", nil, developer_headers
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(parsed_response['pagination']).to be_a_response_like(
             {
               'total_results' => 0,
@@ -467,7 +467,7 @@ RSpec.describe 'Droplets' do
     it 'filters by states' do
       get "/v3/apps/#{app_model.guid}/droplets?states=STAGED", nil, developer_headers
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response['pagination']).to be_a_response_like(
         {
           'total_results' => 1,
@@ -485,7 +485,7 @@ RSpec.describe 'Droplets' do
     it 'list all droplets with a buildpack lifecycle' do
       get "/v3/apps/#{app_model.guid}/droplets?order_by=#{order_by}&per_page=#{per_page}", nil, developer_headers
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response['resources']).to include(hash_including('guid' => droplet1.guid))
       expect(parsed_response['resources']).to include(hash_including('guid' => droplet2.guid))
       expect(parsed_response).to be_a_response_like({
@@ -598,7 +598,7 @@ RSpec.describe 'Droplets' do
     it 'filters by states' do
       get "/v3/packages/#{package_model.guid}/droplets?states=STAGED", nil, developer_headers
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response['pagination']).to be_a_response_like(
         {
           'total_results' => 1,
@@ -616,7 +616,7 @@ RSpec.describe 'Droplets' do
     it 'list all droplets with a buildpack lifecycle' do
       get "/v3/packages/#{package_model.guid}/droplets?order_by=#{order_by}&per_page=#{per_page}", nil, developer_headers
 
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
       expect(parsed_response['resources']).to include(hash_including('guid' => droplet1.guid))
       expect(parsed_response['resources']).to include(hash_including('guid' => droplet2.guid))
       expect(parsed_response).to be_a_response_like({
@@ -714,7 +714,7 @@ RSpec.describe 'Droplets' do
       parsed_response = MultiJson.load(last_response.body)
       copied_droplet  = VCAP::CloudController::DropletModel.last
 
-      expect(last_response.status).to eq(201), "Expected 201, got status: #{last_response.status} with body: #{parsed_response}"
+      expect(last_response).to have_status_code(201), "Expected 201, got status: #{last_response.status} with body: #{parsed_response}"
       expect(parsed_response).to be_a_response_like({
         'guid'               => copied_droplet.guid,
         'state'              => VCAP::CloudController::DropletModel::COPYING_STATE,

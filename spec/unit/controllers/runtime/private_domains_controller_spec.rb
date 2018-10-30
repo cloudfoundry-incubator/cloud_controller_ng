@@ -45,7 +45,7 @@ module VCAP::CloudController
           it 'returns FeatureDisabled' do
             post '/v2/private_domains', request_body
 
-            expect(last_response.status).to eq(403)
+            expect(last_response).to have_status_code(403)
             expect(decoded_response['error_code']).to match(/FeatureDisabled/)
             expect(decoded_response['description']).to match(/private_domain_creation/)
           end
@@ -109,7 +109,7 @@ module VCAP::CloudController
           set_current_user_as_admin
           get "/v2/private_domains/#{private_domain.guid}?inline-relations-depth=1"
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_status_code(200)
           expect(entity).to have_key('shared_organizations_url')
           expect(entity).to_not have_key('shared_organizations')
         end
@@ -127,7 +127,7 @@ module VCAP::CloudController
         set_current_user_as_admin
         post '/v2/private_domains', MultiJson.dump(name: 'foo.com', owning_organization_guid: organization.guid)
 
-        expect(last_response.status).to eq(400)
+        expect(last_response).to have_status_code(400)
         expect(decoded_response['code']).to eq(130005)
         expect(decoded_response['description']).to include(organization.name)
       end

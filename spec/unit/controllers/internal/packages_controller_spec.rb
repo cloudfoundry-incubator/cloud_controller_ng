@@ -51,7 +51,7 @@ module VCAP::CloudController
           it 'returns 422' do
             patch "/internal/v4/packages/#{package.guid}", request_body
 
-            expect(last_response.status).to eq(422)
+            expect(last_response).to have_status_code(422)
             expect(last_response.body).to include('UnprocessableEntity')
             expect(last_response.body).to include('Checksums required when setting state to READY')
           end
@@ -88,7 +88,7 @@ module VCAP::CloudController
           it 'returns NotFound error' do
             patch '/internal/v4/packages/idontexist', request_body
 
-            expect(last_response.status).to eq(404)
+            expect(last_response).to have_status_code(404)
             expect(last_response.body).to include('Package not found')
           end
         end

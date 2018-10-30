@@ -14,7 +14,7 @@ RSpec.describe 'App Features' do
   describe 'GET /v3/apps/:guid/features' do
     it 'gets a list of available features for the app' do
       get "/v3/apps/#{app_model.guid}/features", nil, user_header
-      expect(last_response.status).to eq(200)
+      expect(last_response).to have_status_code(200)
 
       parsed_response = MultiJson.load(last_response.body)
       expect(parsed_response).to be_a_response_like(
@@ -42,7 +42,7 @@ RSpec.describe 'App Features' do
     describe 'GET /v3/apps/:guid/features/ssh' do
       it 'gets a specific app feature' do
         get "/v3/apps/#{app_model.guid}/features/ssh", nil, user_header
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
 
         parsed_response = MultiJson.load(last_response.body)
         expect(parsed_response).to be_a_response_like(
@@ -60,7 +60,7 @@ RSpec.describe 'App Features' do
         request_body = { body: { enabled: false } }
         patch "/v3/apps/#{app_model.guid}/features/ssh", request_body.to_json, user_header
 
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_status_code(200)
         parsed_response = MultiJson.load(last_response.body)
         expect(parsed_response).to be_a_response_like({
           'name' => 'ssh',
