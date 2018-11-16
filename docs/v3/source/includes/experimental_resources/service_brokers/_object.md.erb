@@ -15,35 +15,3 @@ Name | Type | Description
 **created_at** | _datetime_ | The time with zone when the object was created.
 **updated_at** | _datetime_ | The time with zone when the object was last updated.
 **links** | [_links object_](#links) | Links to related resources.
-
-##### The credentials object
-
-Name | Type | Description
----- | ---- | -----------
-**type** | _string_ | Type of the authentication mechanisms that can be used. Valid value is `basic`.
-**data** | _object_ | Data is used to hold the actual credentials depending on the authentication mechanism.
-
-##### Basic credentials
-
-```
-Example basic credentials
-```
-
-```json
-{
-  "type": "basic",
-  "data": {
-    "username": "admin",
-    "password": "secretpassw0rd"
-  }
-}
-```
-This is the default authentication mechanism for platform to broker communication used in Cloud Foundry today.
-
-##### Basic credentials object
-
-Name | Type | Description
----- | ---- | -----------
-**type** | _string_ | `basic`
-**data.username** | _string_ | The username with which to authenticate against the service broker.
-**data.password** | _string_ | The password with which to authenticate against the service broker.
