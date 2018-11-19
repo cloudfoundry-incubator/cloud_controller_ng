@@ -175,6 +175,7 @@ includes:
   - experimental_resources/service_brokers/update
   - experimental_resources/service_brokers/list
   - experimental_resources/service_brokers/get
+  - experimental_resources/service_brokers/delete
 
 search: true
 ---
