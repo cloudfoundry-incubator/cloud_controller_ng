@@ -33,6 +33,8 @@ Content-Type: application/json
 <%= yield_content :single_service_broker %>
 ```
 
+This endpoint creates a new service broker.
+
 #### Definition
 `POST /v3/service_brokers`
 
@@ -43,11 +45,14 @@ Name | Type | Description
 **name** | _string_ | Name of the service broker.
 **url** | _string_ | URL of the service broker.
 **credentials** | [_credentials_](#the-credentials-object) | Credentials used to authenticate against the service broker.
+
 #### Optional Parameters
 
 Name | Type | Description | Default
 ---- | ---- | ----------- | -------
 **space** | [_to-one relationship_](#to-one-relationships) | If set, restricts broker visibility to the specified space. | `null`
+
+<%= yield_content :service_broker_credentials_object %>
 
 #### Permitted Roles
  |
@@ -55,4 +60,3 @@ Name | Type | Description | Default
 Space Developer |
 Admin |
 
-<%= yield_content :service_broker_credentials_object %>

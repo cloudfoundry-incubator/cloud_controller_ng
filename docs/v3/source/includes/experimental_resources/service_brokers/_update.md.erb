@@ -33,6 +33,8 @@ Content-Type: application/json
 <%= yield_content :single_service_broker %>
 ```
 
+This endpoint updates the service broker by GUID.
+
 #### Definition
 `PATCH /v3/service_brokers/:guid`
 
@@ -44,10 +46,10 @@ Name | Type | Description | Default
 **url** | _string_ | URL of the service broker.
 **credentials** | [_credentials_](#the-credentials-object) | Credentials used to authenticate against the service broker.
 
+<%= yield_content :service_broker_credentials_object %>
+
 #### Permitted Roles
  |
 --- | ---
 Space Developer |
 Admin |
-
-<%= yield_content :service_broker_credentials_object %>
