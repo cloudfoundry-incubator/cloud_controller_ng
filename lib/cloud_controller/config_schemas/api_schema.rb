@@ -244,6 +244,7 @@ module VCAP::CloudController
 
           route_services_enabled: bool,
           volume_services_enabled: bool,
+          sapi_routes_only: bool,
 
           optional(:reserved_private_domains) => enum(String, NilClass),
 

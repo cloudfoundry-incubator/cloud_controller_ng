@@ -8,6 +8,16 @@ require 'security_context_setter'
 require 'rate_limiter'
 require 'new_relic_custom_attributes'
 
+class NullApp < Sinatra::Base
+  get '/*' do
+    status 404
+  end
+
+  post '/*' do
+    status 404
+  end
+end
+
 module VCAP::CloudController
   class RackAppBuilder
     def build(config, request_metrics)
@@ -42,7 +52,11 @@ module VCAP::CloudController
         end
 
         map '/v3' do
-          run Rails.application.app
+          if config.get(:sapi_routes_only)
+            run Rails.application.app
+          else
+            run NullApp
+          end
         end
       end
     end
