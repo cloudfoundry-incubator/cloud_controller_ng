@@ -10,11 +10,11 @@ RSpec.describe 'V3 service brokers' do
     # end
 
     it 'has an overview-broker broker' do
-      get('/v3/service_brokers?space_guids=1234', {}, admin_headers)
+      get('/v3/service_brokers?space_guids=123', {}, admin_headers)
 
       json_body = JSON.parse(last_response.body)
       expect(json_body).to have_key('resources')
-      expect(json_body['resources'].length).to eq(0)
+      expect(json_body['resources'].length).to eq(1)
     end
 
     # context 'when there are no service brokers' do
