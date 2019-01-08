@@ -142,6 +142,10 @@ Rails.application.routes.draw do
   post '/apps/:app_guid/tasks', to: 'tasks#create'
   get '/apps/:app_guid/tasks', to: 'tasks#index'
 
+  # external_services
+  get '/external_services', to: 'external_services#index'
+
+
   # service_instances
   get '/service_instances', to: 'service_instances_v3#index'
   get '/service_instances/:service_instance_guid/relationships/shared_spaces', to: 'service_instances_v3#relationships_shared_spaces'
