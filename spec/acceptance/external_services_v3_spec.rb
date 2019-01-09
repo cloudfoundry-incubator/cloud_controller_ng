@@ -14,7 +14,6 @@ RSpec.describe 'V3 external services' do
       expect(last_response).to have_status_code(200)
 
       json_body = JSON.parse(last_response.body)
-      binding.pry
       expect(json_body).to have_key('resources')
       expect(json_body['resources'].length).to eq(2)
     end
