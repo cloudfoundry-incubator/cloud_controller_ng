@@ -146,7 +146,7 @@ Rails.application.routes.draw do
   get '/external_services', to: 'external_services#index'
   get '/external_service_plans', to: 'external_service_plans#index'
   get '/external_service_instances', to: 'external_service_instances#index'
-
+  post '/external_service_instances', to: 'external_service_instances#create'
 
   # service_instances
   get '/service_instances', to: 'service_instances_v3#index'

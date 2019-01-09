@@ -1,16 +1,8 @@
 require 'presenters/v3/external_service_instance_presenter'
+require 'messages/external_service_instance_create_message'
 
 class ExternalServiceInstancesController < ApplicationController
   def index
-    # message = ServiceBrokersListMessage.from_params(query_params)
-    # invalid_param!(message.errors.full_messages) unless message.valid?
-    #
-    # dataset = if permission_queryer.can_read_globally?
-    #             ServiceBrokerListFetcher.new.fetch(message: message)
-    #           else
-    #             ServiceBrokerListFetcher.new.fetch(message: message, permitted_space_guids: permission_queryer.space_developer_space_guids)
-    #           end
-
     external_service_instances = list_external_service_instances
     render status: :ok,
            json: Presenters::V3::PaginatedListPresenter.new(
@@ -20,19 +12,39 @@ class ExternalServiceInstancesController < ApplicationController
           )
   end
 
+  def create
+    message = ExternalServiceInstanceCreateMessage.new(hashed_params[:body])
+    unprocessable!(message.errors.full_messages) unless message.valid?
+
+    service_yaml = "apiVersion: ism.ism.pivotal.io/v1beta1
+kind: BrokeredServiceInstance
+metadata:
+  name: #{message.name}
+  namespace: default
+spec:
+  name: #{message.name}
+  planId: #{message.plan}
+  serviceId: #{message.service}"
+
+    require 'open3'
+    output, _, _ = Open3.capture3("kubectl apply -o json -f -", stdin_data: service_yaml)
+
+    render status: :created, json: JSON.parse(output)
+  end
+
   def list_external_service_instances()
     external_service_instances = JSON.parse(`kubectl get brokeredserviceinstances -o json`)
 
     external_service_instances.fetch("items").map do |service|
       id = service.fetch("spec").fetch("id")
       name = service.fetch("spec").fetch("name")
-      serviceName = service.fetch("spec").fetch("service")
-      planName = service.fetch("spec").fetch("plan")
+      serviceId = service.fetch("spec").fetch("serviceId")
+      planId = service.fetch("spec").fetch("planId")
 
       {
         name: name,
-        service: serviceName,
-        plan: planName,
+        serviceId: serviceId,
+        planId: planId,
         guid: id
       }
     end

@@ -9,8 +9,8 @@ module VCAP::CloudController
         def to_hash
           {
             name: external_service_instance.fetch(:name),
-            plan: external_service_instance.fetch(:plan),
-            service: external_service_instance.fetch(:service),
+            planId: external_service_instance.fetch(:planId),
+            serviceId: external_service_instance.fetch(:serviceId),
             links: build_links,
           }
         end
