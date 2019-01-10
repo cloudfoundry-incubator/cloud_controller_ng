@@ -1,5 +1,6 @@
 require 'presenters/v3/external_service_instance_presenter'
 require 'messages/external_service_instance_create_message'
+require 'securerandom'
 
 class ExternalServiceInstancesController < ApplicationController
   def index
@@ -16,12 +17,15 @@ class ExternalServiceInstancesController < ApplicationController
     message = ExternalServiceInstanceCreateMessage.new(hashed_params[:body])
     unprocessable!(message.errors.full_messages) unless message.valid?
 
+    guid = SecureRandom.uuid
+
     service_yaml = "apiVersion: ism.ism.pivotal.io/v1beta1
 kind: BrokeredServiceInstance
 metadata:
-  name: #{message.name}
+  name: #{guid}
   namespace: default
 spec:
+  guid: #{guid}
   name: #{message.name}
   planId: #{message.planId}
   serviceId: #{message.serviceId}"
@@ -43,7 +47,7 @@ spec:
   end
 
   def service_instance_from_external(service)
-      id = service.fetch("spec").fetch("id", "")
+      id = service.fetch("spec").fetch("guid")
       name = service.fetch("spec").fetch("name")
       serviceId = service.fetch("spec").fetch("serviceId")
       planId = service.fetch("spec").fetch("planId")
