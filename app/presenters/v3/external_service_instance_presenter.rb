@@ -11,6 +11,7 @@ module VCAP::CloudController
             name: external_service_instance.fetch(:name),
             planId: external_service_instance.fetch(:planId),
             serviceId: external_service_instance.fetch(:serviceId),
+            guid: external_service_instance.fetch(:guid, ""),
             links: build_links,
           }
         end

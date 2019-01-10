@@ -23,20 +23,27 @@ metadata:
   namespace: default
 spec:
   name: #{message.name}
-  planId: #{message.plan}
-  serviceId: #{message.service}"
+  planId: #{message.planId}
+  serviceId: #{message.serviceId}"
 
     require 'open3'
     output, _, _ = Open3.capture3("kubectl apply -o json -f -", stdin_data: service_yaml)
 
-    render status: :created, json: JSON.parse(output)
+    service = JSON.parse(output)
+
+    render status: :created, json: service_instance_from_external(service)
   end
 
   def list_external_service_instances()
     external_service_instances = JSON.parse(`kubectl get brokeredserviceinstances -o json`)
 
     external_service_instances.fetch("items").map do |service|
-      id = service.fetch("spec").fetch("id")
+      service_instance_from_external(service)
+    end
+  end
+
+  def service_instance_from_external(service)
+      id = service.fetch("spec").fetch("id", "")
       name = service.fetch("spec").fetch("name")
       serviceId = service.fetch("spec").fetch("serviceId")
       planId = service.fetch("spec").fetch("planId")
@@ -47,6 +54,6 @@ spec:
         planId: planId,
         guid: id
       }
-    end
+
   end
 end

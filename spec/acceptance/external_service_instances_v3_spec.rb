@@ -4,13 +4,13 @@ RSpec.describe 'V3 external service instances' do
   describe 'creating instances' do
     it 'is wildly successful' do
       post('/v3/external_service_instances', {
-        plan: '5ce5a482ff64a53cc1670994d60b9003',
-        service: '33ceba5779bfa320a1ef0694d98069df',
+        planId: '5ce5a482ff64a53cc1670994d60b9003',
+        serviceId: '33ceba5779bfa320a1ef0694d98069df',
         name: 'some-instance'
       }.to_json, admin_headers)
       expect(last_response).to have_status_code(201)
       json_body = JSON.parse(last_response.body)
-      expect(json_body['spec']['name']).to eq('some-instance')
+      expect(json_body['name']).to eq('some-instance')
 
       get('/v3/external_service_instances', {}, admin_headers)
       expect(last_response).to have_status_code(200)
