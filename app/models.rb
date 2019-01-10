@@ -74,6 +74,7 @@ require 'models/runtime/space_annotation_model'
 
 require 'models/services/service'
 require 'models/services/service_binding'
+require 'models/services/external_service_binding'
 require 'models/services/route_binding'
 require 'models/services/service_dashboard_client'
 require 'models/services/service_instance'

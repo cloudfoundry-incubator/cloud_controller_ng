@@ -39,9 +39,13 @@ spec:
       sleep 1
     end
 
-    external_binding = get_external_service_binding(name)
+    raw_binding = get_external_service_binding(name)
+    external_binding = service_binding_from_external(raw_binding)
 
-    render status: :created, json: service_binding_from_external(external_binding)
+    binding = VCAP::CloudController::ExternalServiceBinding.new(app_guid: message.appGuid, credentials: external_binding.fetch(:credentials))
+    binding.save
+
+    render status: :created, json: external_binding
   end
 
   def list_external_service_bindings()
