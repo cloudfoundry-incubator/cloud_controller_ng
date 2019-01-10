@@ -58,6 +58,5 @@ spec:
         planId: planId,
         guid: id
       }
-
   end
 end
