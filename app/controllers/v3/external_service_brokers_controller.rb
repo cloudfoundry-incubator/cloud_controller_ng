@@ -1,6 +1,7 @@
 require 'messages/service_brokers_list_message'
 require 'presenters/v3/service_broker_presenter'
 require 'fetchers/service_broker_list_fetcher'
+require 'ism/client'
 
 class ExternalServiceBrokersController < ApplicationController
   def index
@@ -14,6 +15,22 @@ class ExternalServiceBrokersController < ApplicationController
              paginated_result: PaginatedResult.new(brokers, 0, message.pagination_options),
              path: '/v3/external_service_brokers',
           )
+  end
+
+  def create
+    body = hashed_params[:body]
+    name = body.fetch(:name)
+    username = body.fetch(:auth_username)
+    password = body.fetch(:auth_password)
+    url = body.fetch(:url)
+
+    broker = ServiceBroker.new(broker_url: url, auth_username: username, auth_password: password, name: name)
+    client = ISM::Client.new
+
+    client.create_broker(broker)
+
+    render status: :created,
+      json: Presenters::V3::ServiceBrokerPresenter.new(broker)
   end
 
   def list_brokers
