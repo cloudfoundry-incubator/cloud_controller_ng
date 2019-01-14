@@ -11,7 +11,7 @@ RSpec.describe 'V3 external service plans' do
         name: 'overview-broker',
         auth_username: ENV.fetch('BESTBROKERUSERNAME'),
         auth_password: ENV.fetch('BESTBROKERPASSWORD'),
-        url: 'https://the-best-broker.cfapps.io'
+        url: ENV.fetch("BESTBROKERURL")
       }.to_json, admin_headers)
       expect(last_response).to have_status_code(201)
     end

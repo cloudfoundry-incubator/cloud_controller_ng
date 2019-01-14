@@ -33,10 +33,23 @@ spec:
     require 'open3'
     output, _, _ = Open3.capture3("kubectl apply -o json -f -", stdin_data: service_yaml)
 
-    service = JSON.parse(output)
+    tries = 0
+    until get_external_service_instance(guid).dig("status", "success")
+      raise "timed out creating service instance" if tries == 10
+
+      tries += 1
+      sleep 1
+    end
+
+		service = get_external_service_instance(guid)
 
     render status: :created, json: service_instance_from_external(service)
   end
+
+  def get_external_service_instance(instance_name)
+    JSON.parse(`kubectl get brokeredserviceinstance #{instance_name} -o json`)
+  end
+
 
   def list_external_service_instances()
     external_service_instances = JSON.parse(`kubectl get brokeredserviceinstances -o json`)
