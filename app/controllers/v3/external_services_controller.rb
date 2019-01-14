@@ -12,7 +12,7 @@ class ExternalServicesController < ApplicationController
   end
 
   def list_external_services()
-    external_services = JSON.parse(`kubectl get brokeredservices -o json`)
+    external_services = ism_client.list_services
 
     external_services.fetch("items").map do |service|
       name = service.fetch("spec").fetch("name")
@@ -21,5 +21,9 @@ class ExternalServicesController < ApplicationController
 
       Service.new(label: name, description: description, guid: guid)
     end
+  end
+
+  def ism_client
+    @ism_client ||= ISM::Client.new
   end
 end

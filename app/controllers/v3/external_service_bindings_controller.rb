@@ -17,30 +17,9 @@ class ExternalServiceBindingsController < ApplicationController
     message = ExternalServiceBindingCreateMessage.new(hashed_params[:body])
     unprocessable!(message.errors.full_messages) unless message.valid?
 
-    guid = SecureRandom.uuid
+    binding = ism_client.create_binding(message.serviceInstanceGuid)
 
-    service_binding_yaml = "apiVersion: ism.ism.pivotal.io/v1beta1
-kind: BrokeredServiceBinding
-metadata:
-  name: #{guid}
-  namespace: default
-spec:
-  serviceInstanceGuid: #{message.serviceInstanceGuid}
-  platformName: my-cf"
-
-    require 'open3'
-    output, _, _ = Open3.capture3("kubectl apply -o json -f -", stdin_data: service_binding_yaml)
-
-    external_binding = JSON.parse(output)
-
-    name = external_binding.dig("metadata", "name")
-
-    until get_external_service_binding(name).dig("status", "credentials")
-      sleep 1
-    end
-
-    raw_binding = get_external_service_binding(name)
-    external_binding = service_binding_from_external(raw_binding)
+    external_binding = service_binding_from_external(binding)
 
     binding = VCAP::CloudController::ExternalServiceBinding.new(app_guid: message.appGuid, credentials: external_binding.fetch(:credentials))
     binding.save
@@ -49,15 +28,11 @@ spec:
   end
 
   def list_external_service_bindings()
-    external_service_bindings = JSON.parse(`kubectl get brokeredservicebindings -o json`)
+    external_service_bindings = ism_client.list_service_bindings
 
     external_service_bindings.fetch("items").map do |external_binding|
       service_binding_from_external(external_binding)
     end
-  end
-
-  def get_external_service_binding(binding_name)
-    JSON.parse(`kubectl get brokeredservicebindings #{binding_name} -o json`)
   end
 
   def service_binding_from_external(external_binding)
@@ -74,5 +49,9 @@ spec:
         platformName: platform_name,
         credentials: creds
       }
+  end
+
+  def ism_client
+    @ism_client ||= ISM::Client.new
   end
 end

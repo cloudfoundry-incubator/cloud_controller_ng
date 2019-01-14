@@ -3,7 +3,7 @@ require 'ism/client'
 
 RSpec.describe 'V3 migrate services' do
   describe 'migrating a service broker' do
-    let!(:broker) { VCAP::CloudController::ServiceBroker.make(broker_url: ENV.fetch("BESTBROKERURL"), auth_username: ENV.fetch("BESTBROKERUSERNAME") , auth_password: ENV.fetch("BESTBROKERPASSWORD")) }
+    let!(:broker) { VCAP::CloudController::ServiceBroker.make(broker_url: ENV.fetch('BESTBROKERURL'), auth_username: ENV.fetch('BESTBROKERUSERNAME') , auth_password: ENV.fetch('BESTBROKERPASSWORD')) }
     let!(:service) { VCAP::CloudController::Service.make(service_broker: broker) }
 
     before do

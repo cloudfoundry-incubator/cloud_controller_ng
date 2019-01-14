@@ -4,6 +4,7 @@ require 'fetchers/service_broker_list_fetcher'
 require 'ism/client'
 
 class ExternalServiceBrokersController < ApplicationController
+
   def index
     message = ServiceBrokersListMessage.from_params(query_params)
     invalid_param!(message.errors.full_messages) unless message.valid?
@@ -25,16 +26,15 @@ class ExternalServiceBrokersController < ApplicationController
     url = body.fetch(:url)
 
     broker = ServiceBroker.new(broker_url: url, auth_username: username, auth_password: password, name: name)
-    client = ISM::Client.new
 
-    client.create_broker(broker)
+    ism_client.create_broker(broker)
 
     render status: :created,
       json: Presenters::V3::ServiceBrokerPresenter.new(broker)
   end
 
   def list_brokers
-    brokers = JSON.parse(`kubectl get brokers -o json`)
+    brokers = ism_client.list_brokers
 
     brokers.fetch("items").map do |broker|
       name = broker.fetch("metadata").fetch("name")
@@ -43,5 +43,9 @@ class ExternalServiceBrokersController < ApplicationController
 
       ServiceBroker.new(name: name, broker_url: url, auth_username: username)
     end
+  end
+
+  def ism_client
+    @ism_client ||= ISM::Client.new
   end
 end

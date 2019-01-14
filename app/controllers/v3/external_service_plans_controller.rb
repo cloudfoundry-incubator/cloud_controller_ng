@@ -1,4 +1,5 @@
 require 'presenters/v3/external_service_plan_presenter'
+require 'ism/client'
 
 class ExternalServicePlansController < ApplicationController
   def index
@@ -12,7 +13,7 @@ class ExternalServicePlansController < ApplicationController
   end
 
   def list_external_service_plans()
-    external_service_plans = JSON.parse(`kubectl get brokeredserviceplans -o json`)
+    external_service_plans = ism_client.list_service_plans
 
     external_service_plans.fetch("items").map do |service|
       name = service.fetch("spec").fetch("name")
@@ -21,5 +22,9 @@ class ExternalServicePlansController < ApplicationController
 
       ServicePlan.new(name: name, description: description, guid: guid)
     end
+  end
+
+  def ism_client
+    @ism_client ||= ISM::Client.new
   end
 end
