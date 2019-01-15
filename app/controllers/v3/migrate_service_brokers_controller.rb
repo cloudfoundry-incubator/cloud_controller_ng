@@ -11,11 +11,7 @@ class MigrateServiceBrokersController < ApplicationController
     broker = ServiceBroker.find(guid: broker_guid)
 
     # create the broker in ISM
-
     result = ServiceBrokerMigrate.new.migrate(broker)
-
-    # delete the broker from model
-    broker.destroy
 
     render status: :created, json: result
   end

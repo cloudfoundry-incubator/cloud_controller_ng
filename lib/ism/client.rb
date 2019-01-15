@@ -2,7 +2,6 @@ require 'open3'
 
 module ISM
   class Client
-
     def create_broker(broker)
       service_broker_yaml = "apiVersion: ism.ism.pivotal.io/v1beta1
 kind: Broker
@@ -27,7 +26,23 @@ spec:
       get_service_broker(broker.name)
     end
 
-    def create_service_instance(name, service_id, plan_id)
+    def migrate_service_instance(guid, name, service_id, plan_id)
+      service_instance_yaml = "apiVersion: ism.ism.pivotal.io/v1beta1
+kind: BrokeredServiceInstance
+metadata:
+  name: #{guid}
+  namespace: default
+spec:
+  guid: #{guid}
+  name: #{name}
+  planId: #{plan_id}
+  serviceId: #{service_id}
+  migrated: true"
+
+      apply_service_instance(service_instance_yaml)
+    end
+
+    def create_service_instance(name, service_id, plan_id, migrated=true)
       guid = SecureRandom.uuid
 
       service_instance_yaml = "apiVersion: ism.ism.pivotal.io/v1beta1
@@ -41,18 +56,9 @@ spec:
   planId: #{plan_id}
   serviceId: #{service_id}"
 
-      output = apply(service_instance_yaml)
-
-      tries = 0
-      until get_service_instance(guid).dig('status', 'success')
-	raise 'service instance creation success timed out' if tries == 10
-
-	tries += 1
-	sleep 1
-      end
-
-      get_service_instance(guid)
+      apply_service_instance(service_instance_yaml)
     end
+
 
     def create_binding(instance_guid)
       binding_guid = SecureRandom.uuid
@@ -72,7 +78,7 @@ spec:
 
       tries = 0
       until get_service_binding(name).dig("status", "credentials")
-	raise "credentials not found in status after creation" if tries == 10
+	raise 'credentials not found in status after creation' if tries == 10
 
 	tries += 1
 	sleep 1
@@ -122,6 +128,22 @@ spec:
     end
 
     private
+
+    def apply_service_instance(yaml)
+      output = apply(yaml)
+
+      guid = output.fetch("metadata").fetch("name")
+
+      tries = 0
+      until get_service_instance(guid).dig('status', 'success')
+	raise 'service instance creation success timed out' if tries == 10
+
+	tries += 1
+	sleep 1
+      end
+
+      get_service_instance(guid)
+    end
 
     def apply(yaml)
       output, _, _ = Open3.capture3("kubectl apply -o json -f -", stdin_data: yaml)
