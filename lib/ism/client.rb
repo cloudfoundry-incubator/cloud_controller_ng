@@ -42,12 +42,14 @@ spec:
       apply_service_instance(service_instance_yaml)
     end
 
-    def migrate_service_binding(guid, instance_guid, credentials)
+    def migrate_service_binding(guid, instance_guid, app_guid, credentials)
       service_binding_yaml = "apiVersion: ism.ism.pivotal.io/v1beta1
 kind: BrokeredServiceBinding
 metadata:
   name: #{guid}
   namespace: default
+  labels:
+    app_guid: #{app_guid}
 spec:
   serviceInstanceGuid: #{instance_guid}
   platformName: my-cf
@@ -74,7 +76,7 @@ spec:
       apply_service_instance(service_instance_yaml)
     end
 
-    def create_binding(instance_guid)
+    def create_binding(instance_guid, app_guid)
       binding_guid = SecureRandom.uuid
 
       service_binding_yaml = "apiVersion: ism.ism.pivotal.io/v1beta1
@@ -82,6 +84,8 @@ kind: BrokeredServiceBinding
 metadata:
   name: #{binding_guid}
   namespace: default
+  labels:
+    app_guid: #{app_guid}
 spec:
   serviceInstanceGuid: #{instance_guid}
   platformName: my-cf"

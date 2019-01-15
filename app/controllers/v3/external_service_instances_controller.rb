@@ -34,13 +34,13 @@ class ExternalServiceInstancesController < ApplicationController
   def service_instance_from_external(service)
     id = service.fetch('spec').fetch('guid')
     name = service.fetch('spec').fetch('name')
-    serviceId = service.fetch('spec').fetch('serviceId')
-    planId = service.fetch('spec').fetch('planId')
+    service_id = service.fetch('spec').fetch('serviceId')
+    plan_id = service.fetch('spec').fetch('planId')
 
     {
       name: name,
-      serviceId: serviceId,
-      planId: planId,
+      service_id: service_id,
+      plan_id: plan_id,
       guid: id
     }
   end

@@ -47,7 +47,7 @@ module VCAP::CloudController
         expect(last_response).to have_status_code(201)
 
         json_body = JSON.parse(last_response.body)
-        expect(json_body).to have_key('serviceInstanceGuid')
+        expect(json_body).to have_key('service_instance_guid')
         expect(json_body['credentials']).to have_key('username')
         expect(json_body['credentials']).to have_key('password')
 

@@ -85,7 +85,7 @@ module VCAP::CloudController
     end
 
     def migrate_service_binding(service_binding)
-      ism_client.migrate_service_binding(service_binding.guid, service_binding.service_instance.guid, service_binding.credentials.to_s)
+      ism_client.migrate_service_binding(service_binding.guid, service_binding.service_instance.guid, service_binding.app.guid, service_binding.credentials.to_json)
     end
 
     def destroy_service_instance(service_instance)

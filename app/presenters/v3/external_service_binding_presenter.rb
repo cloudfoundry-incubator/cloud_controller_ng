@@ -8,9 +8,10 @@ module VCAP::CloudController
       class ExternalServiceBindingPresenter < BasePresenter
         def to_hash
           {
-            platformName: external_service_binding.fetch(:platformName),
-            serviceInstanceGuid: external_service_binding.fetch(:serviceInstanceGuid),
+            platform_name: external_service_binding.fetch(:platform_name),
+            service_instance_guid: external_service_binding.fetch(:service_instance_guid),
             credentials: external_service_binding.fetch(:credentials),
+            app_guid: external_service_binding.fetch(:app_guid),
             links: build_links,
           }
         end

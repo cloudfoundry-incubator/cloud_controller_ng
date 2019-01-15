@@ -34,6 +34,11 @@ RSpec.describe 'V3 migrate services' do
       expect(json_body).to have_key('resources')
       expect(json_body['resources'].length).to eq(0)
 
+      get('/v3/external_service_bindings', {}, admin_headers)
+      json_body = JSON.parse(last_response.body)
+      expect(json_body).to have_key('resources')
+      expect(json_body['resources'].length).to eq(0)
+
       post('/v3/migrate_service_brokers', {
         broker_guid: broker.guid
       }.to_json, admin_headers)
@@ -54,6 +59,12 @@ RSpec.describe 'V3 migrate services' do
       json_body = JSON.parse(last_response.body)
       expect(json_body).to have_key('resources')
       expect(json_body['resources'].length).to eq(1)
+
+      get('/v3/external_service_bindings', {}, admin_headers)
+      json_body = JSON.parse(last_response.body)
+      expect(json_body).to have_key('resources')
+      expect(json_body['resources'].length).to eq(1)
+      expect(json_body['resources'][0]['app_guid']).to eq(service_binding.app.guid)
 
       expect(VCAP::CloudController::ServiceBroker.all.length).to eq(0)
       expect(VCAP::CloudController::ManagedServiceInstance.all.length).to eq(0)

@@ -17,7 +17,7 @@ class ExternalServiceBindingsController < ApplicationController
     message = ExternalServiceBindingCreateMessage.new(hashed_params[:body])
     unprocessable!(message.errors.full_messages) unless message.valid?
 
-    binding = ism_client.create_binding(message.serviceInstanceGuid)
+    binding = ism_client.create_binding(message.serviceInstanceGuid, message.appGuid)
 
     external_binding = service_binding_from_external(binding)
 
@@ -30,24 +30,26 @@ class ExternalServiceBindingsController < ApplicationController
   def list_external_service_bindings()
     external_service_bindings = ism_client.list_service_bindings
 
-    external_service_bindings.fetch("items").map do |external_binding|
+    external_service_bindings.fetch('items').map do |external_binding|
       service_binding_from_external(external_binding)
     end
   end
 
   def service_binding_from_external(external_binding)
-      guid = external_binding.fetch("metadata").fetch("uid")
-      service_instance_guid = external_binding.fetch("spec").fetch("serviceInstanceGuid")
-      platform_name = external_binding.fetch("spec").fetch("platformName")
-      raw_creds = external_binding.dig("status", "credentials") || ""
+      guid = external_binding.fetch('metadata').fetch('uid')
+      service_instance_guid = external_binding.fetch('spec').fetch('serviceInstanceGuid')
+      platform_name = external_binding.fetch('spec').fetch('platformName')
+      app_guid = external_binding.dig('metadata', 'labels', 'app_guid')
+      raw_creds = external_binding.dig('status', 'credentials') || ''
 
       creds = JSON.parse(raw_creds)
 
       {
         guid: guid,
-        serviceInstanceGuid: service_instance_guid,
-        platformName: platform_name,
-        credentials: creds
+        service_instance_guid: service_instance_guid,
+        platform_name: platform_name,
+        credentials: creds,
+        app_guid: app_guid
       }
   end
 
