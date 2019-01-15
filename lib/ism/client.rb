@@ -42,6 +42,21 @@ spec:
       apply_service_instance(service_instance_yaml)
     end
 
+    def migrate_service_binding(guid, instance_guid, credentials)
+      service_binding_yaml = "apiVersion: ism.ism.pivotal.io/v1beta1
+kind: BrokeredServiceBinding
+metadata:
+  name: #{guid}
+  namespace: default
+spec:
+  serviceInstanceGuid: #{instance_guid}
+  platformName: my-cf
+  migrated: true
+  migratedCredentials: '#{credentials}'"
+
+      apply_service_binding(service_binding_yaml)
+    end
+
     def create_service_instance(name, service_id, plan_id, migrated=true)
       guid = SecureRandom.uuid
 
@@ -59,7 +74,6 @@ spec:
       apply_service_instance(service_instance_yaml)
     end
 
-
     def create_binding(instance_guid)
       binding_guid = SecureRandom.uuid
 
@@ -72,19 +86,7 @@ spec:
   serviceInstanceGuid: #{instance_guid}
   platformName: my-cf"
 
-      output = apply(service_binding_yaml)
-
-      name = output.dig("metadata", "name")
-
-      tries = 0
-      until get_service_binding(name).dig("status", "credentials")
-	raise 'credentials not found in status after creation' if tries == 10
-
-	tries += 1
-	sleep 1
-      end
-
-      get_service_binding(name)
+      apply_service_binding(service_binding_yaml)
     end
 
     def list_brokers
@@ -125,6 +127,7 @@ spec:
       `kubectl delete brokeredserviceplans --all`
       `kubectl delete brokeredserviceinstances --all`
       `kubectl delete brokeredserviceplans --all`
+      `kubectl delete brokeredservicebindings --all`
     end
 
     private
@@ -145,8 +148,24 @@ spec:
       get_service_instance(guid)
     end
 
+    def apply_service_binding(yaml)
+      output = apply(yaml)
+
+      name = output.dig("metadata", "name")
+
+      tries = 0
+      until get_service_binding(name).dig("status", "credentials")
+	raise 'credentials not found in status after creation' if tries == 10
+
+	tries += 1
+	sleep 1
+      end
+
+      get_service_binding(name)
+    end
+
     def apply(yaml)
-      output, _, _ = Open3.capture3("kubectl apply -o json -f -", stdin_data: yaml)
+      output, stderr_str, status = Open3.capture3("kubectl apply -o json -f -", stdin_data: yaml)
       JSON.parse(output)
     end
   end
