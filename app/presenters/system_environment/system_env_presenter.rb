@@ -14,19 +14,19 @@ class SystemEnvPresenter
 
   def service_binding_env_variables
     services_hash = {}
-    @service_bindings.select(&:is_created?).each do |service_binding|
-      service_name = service_binding_label(service_binding)
+    @service_bindings.each do |service_binding|
+      service_name = "awesome-service"
       services_hash[service_name.to_sym] ||= []
-      services_hash[service_name.to_sym] << service_binding_env_values(service_binding)
+      services_hash[service_name.to_sym] << {credentials: service_binding.credentials}
     end
     services_hash
   end
 
   def service_binding_env_values(service_binding)
-    ServiceBindingPresenter.new(service_binding, include_instance: true)
+    ServiceBindingPresenter.new(service_binding, include_instance: false)
   end
 
   def service_binding_label(service_binding)
-    ServiceInstancePresenter.new(service_binding.service_instance).to_hash[:label]
+    'awesome-service'
   end
 end

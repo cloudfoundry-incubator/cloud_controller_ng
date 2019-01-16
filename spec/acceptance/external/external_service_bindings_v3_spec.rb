@@ -60,8 +60,10 @@ module VCAP::CloudController
         expect(json_body['resources'][0]['credentials']).to have_key('username')
         expect(json_body['resources'][0]['credentials']).to have_key('password')
 
-
-        expect(VCAP::CloudController::ExternalServiceBinding.first).to exist
+        binding = VCAP::CloudController::ExternalServiceBinding.first
+        expect(binding).to exist
+        expect(binding.credentials["username"]).to eq "admin"
+        expect(binding.credentials["password"]).not_to be_empty
       end
     end
   end

@@ -35,6 +35,7 @@ module VCAP::CloudController
     many_to_one :app, class: 'VCAP::CloudController::AppModel', key: :app_guid, primary_key: :guid, without_guid_generation: true
     many_to_one :revision, class: 'VCAP::CloudController::RevisionModel', key: :revision_guid, primary_key: :guid, without_guid_generation: true
     one_to_many :service_bindings, key: :app_guid, primary_key: :app_guid, without_guid_generation: true
+    one_to_many :external_service_bindings, key: :app_guid, primary_key: :app_guid, without_guid_generation: true
     one_to_many :events, class: VCAP::CloudController::AppEvent, key: :app_id
 
     one_through_one :space,

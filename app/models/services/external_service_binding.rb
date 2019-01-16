@@ -8,7 +8,7 @@ module VCAP::CloudController
 
     many_to_one :app, class: 'VCAP::CloudController::AppModel', key: :app_guid, primary_key: :guid, without_guid_generation: true
 
-    # serializes_via_json :credentials
+    serializes_via_json :credentials
 
     def to_hash(_opts={})
       { guid: guid }
