@@ -30,8 +30,8 @@ RSpec.describe 'V3 external service instances' do
 
   it 'is wildly successful' do
     post('/v3/external_service_instances', {
-      planId: planId,
-      serviceId: serviceId,
+      plan_id: planId,
+      service_id: serviceId,
       name: 'some-instance'
     }.to_json, admin_headers)
     expect(last_response).to have_status_code(201)
@@ -45,5 +45,33 @@ RSpec.describe 'V3 external service instances' do
     expect(json_body).to have_key('resources')
     expect(json_body['resources'].length).to eq(1)
     expect(json_body['resources'][0]['name']).to eq('some-instance')
+  end
+
+  it 'filters by space' do
+    space = VCAP::CloudController::Space.make
+
+    post('/v3/external_service_instances', {
+      plan_id: planId,
+      service_id: serviceId,
+      name: 'some-instance',
+      space_guid: space.guid
+    }.to_json, admin_headers)
+    expect(last_response).to have_status_code(201)
+    json_body = JSON.parse(last_response.body)
+    expect(json_body['name']).to eq('some-instance')
+
+    get("/v3/external_service_instances?space_guid=#{space.guid}", {}, admin_headers)
+    expect(last_response).to have_status_code(200)
+
+    json_body = JSON.parse(last_response.body)
+    expect(json_body).to have_key('resources')
+    expect(json_body['resources'].length).to eq(1)
+    expect(json_body['resources'][0]['name']).to eq('some-instance')
+
+    get('/v3/external_service_instances?space_guid=missing-guid', {}, admin_headers)
+    expect(last_response).to have_status_code(200)
+    json_body = JSON.parse(last_response.body)
+    expect(json_body).to have_key('resources')
+    expect(json_body['resources'].length).to eq(0)
   end
 end

@@ -59,7 +59,7 @@ spec:
       apply_service_binding(service_binding_yaml)
     end
 
-    def create_service_instance(name, service_id, plan_id, migrated=true)
+    def create_service_instance(name, service_id, plan_id, space_guid)
       guid = SecureRandom.uuid
 
       service_instance_yaml = "apiVersion: ism.ism.pivotal.io/v1beta1
@@ -67,6 +67,8 @@ kind: BrokeredServiceInstance
 metadata:
   name: #{guid}
   namespace: default
+  labels:
+    space_guid: #{space_guid}
 spec:
   guid: #{guid}
   name: #{name}
@@ -107,6 +109,10 @@ spec:
 
     def list_service_instances
       JSON.parse(`kubectl get brokeredserviceinstances -o json`)
+    end
+
+    def list_service_instances_by_space(space_guid)
+      JSON.parse(`kubectl get brokeredserviceinstances -o json -l 'space_guid==#{space_guid}'`)
     end
 
     def list_service_bindings

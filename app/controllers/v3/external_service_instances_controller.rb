@@ -5,7 +5,7 @@ require 'ism/client'
 
 class ExternalServiceInstancesController < ApplicationController
   def index
-    external_service_instances = list_external_service_instances
+    external_service_instances = list_external_service_instances(query_params[:space_guid])
     render status: :ok,
       json: Presenters::V3::PaginatedListPresenter.new(
         presenter: Presenters::V3::ExternalServiceInstancePresenter,
@@ -18,13 +18,17 @@ class ExternalServiceInstancesController < ApplicationController
     message = ExternalServiceInstanceCreateMessage.new(hashed_params[:body])
     unprocessable!(message.errors.full_messages) unless message.valid?
 
-    service = ism_client.create_service_instance(message.name, message.serviceId, message.planId)
+    service = ism_client.create_service_instance(message.name, message.service_id, message.plan_id, message.space_guid)
 
     render status: :created, json: service_instance_from_external(service)
   end
 
-  def list_external_service_instances
-    external_service_instances = ism_client.list_service_instances
+  def list_external_service_instances(space_guid=nil)
+    if space_guid
+      external_service_instances = ism_client.list_service_instances_by_space(space_guid)
+    else
+      external_service_instances = ism_client.list_service_instances
+    end
 
     external_service_instances.fetch('items').map do |service|
       service_instance_from_external(service)
