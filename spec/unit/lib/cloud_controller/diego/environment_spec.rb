@@ -5,7 +5,7 @@ require_relative '../../../../../lib/vcap/vars_builder'
 module VCAP::CloudController::Diego
   RSpec.describe Environment do
     let(:process) { VCAP::CloudController::ProcessModelFactory.make(environment_json: environment) }
-    let!(:binding) { VCAP::CloudController::ServiceBinding.make(app: process.app, service_instance: VCAP::CloudController::ManagedServiceInstance.make(space: process.space)) }
+    let!(:process_binding) { VCAP::CloudController::ServiceBinding.make(app: process.app, service_instance: VCAP::CloudController::ManagedServiceInstance.make(space: process.space)) }
     let(:environment) do
       {
         'APP_KEY1' => 'APP_VAL1',

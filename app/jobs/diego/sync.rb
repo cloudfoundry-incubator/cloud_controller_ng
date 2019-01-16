@@ -15,7 +15,6 @@ module VCAP::CloudController
           config = CloudController::DependencyLocator.instance.config
           @statsd.time('cc.diego_sync.duration') do
             VCAP::CloudController::Diego::ProcessesSync.new(config: config).sync
-            VCAP::CloudController::Diego::BindingSync.new(config: config).sync
             VCAP::CloudController::Diego::TasksSync.new(config: config).sync
           end
         end

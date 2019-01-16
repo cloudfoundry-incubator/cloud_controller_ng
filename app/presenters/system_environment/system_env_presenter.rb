@@ -17,7 +17,7 @@ class SystemEnvPresenter
     @service_bindings.each do |service_binding|
       service_name = "awesome-service"
       services_hash[service_name.to_sym] ||= []
-      services_hash[service_name.to_sym] << {credentials: service_binding.credentials}
+      services_hash[service_name.to_sym] << {credentials: service_binding.dig('status', 'credentials')}
     end
     services_hash
   end

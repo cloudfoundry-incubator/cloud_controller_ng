@@ -13,11 +13,12 @@ module VCAP::CloudController
       end
 
       def as_json(_={})
+        service_bindings = ISM::Client.new.list_service_bindings.fetch('items')
         diego_env =
           @initial_env.
           merge(process.environment_json || {}).
           merge('VCAP_APPLICATION' => vcap_application, 'MEMORY_LIMIT' => "#{process.memory}m").
-          merge(SystemEnvPresenter.new(process.external_service_bindings).system_env).
+          merge(SystemEnvPresenter.new(service_bindings).system_env).
           merge('EDANDAARTISTATICENV' => "hooray")
 
         diego_env = diego_env.merge(DATABASE_URL: process.database_uri) if process.database_uri
