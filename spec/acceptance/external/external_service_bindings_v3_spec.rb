@@ -26,8 +26,8 @@ module VCAP::CloudController
       planId = json_body['resources'][0]['guid']
 
       post('/v3/external_service_instances', {
-        planId: planId,
-        serviceId: serviceId,
+        plan_id: planId,
+        service_id: serviceId,
         name: 'some-instance'
       }.to_json, admin_headers)
       expect(last_response).to have_status_code(201)
@@ -40,8 +40,8 @@ module VCAP::CloudController
 
       it 'is outrageously successful' do
         post('/v3/external_service_bindings', {
-          serviceInstanceGuid: instance_id,
-          appGuid: process.app.guid
+          service_instance_guid: instance_id,
+          app_guid: process.app.guid
         }.to_json, admin_headers)
 
         expect(last_response).to have_status_code(201)

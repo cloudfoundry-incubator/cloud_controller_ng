@@ -17,11 +17,11 @@ class ExternalServiceBindingsController < ApplicationController
     message = ExternalServiceBindingCreateMessage.new(hashed_params[:body])
     unprocessable!(message.errors.full_messages) unless message.valid?
 
-    binding = ism_client.create_binding(message.serviceInstanceGuid, message.appGuid)
+    binding = ism_client.create_binding(message.service_instance_guid, message.app_guid)
 
     external_binding = service_binding_from_external(binding)
 
-    binding = VCAP::CloudController::ExternalServiceBinding.new(app_guid: message.appGuid, credentials: external_binding.fetch(:credentials))
+    binding = VCAP::CloudController::ExternalServiceBinding.new(app_guid: message.app_guid, credentials: external_binding.fetch(:credentials))
     binding.save
 
     render status: :created, json: external_binding
