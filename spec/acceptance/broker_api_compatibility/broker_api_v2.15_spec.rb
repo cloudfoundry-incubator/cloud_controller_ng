@@ -151,6 +151,31 @@ RSpec.describe 'Service Broker API integration' do
         end
       end
     end
+
+    describe 'cancel create async operation' do
+      before do
+        setup_broker(default_catalog)
+        @broker = VCAP::CloudController::ServiceBroker.find guid: @broker_guid
+        stub_async_last_operation(body: { state: 'in progress' })
+      end
+
+      context 'when provisioning a service instance' do
+        it 'delete request should cancel the creation and delete the instance' do
+          async_provision_service
+          expect(
+            a_request(:put, provision_url_for_broker(@broker, accepts_incomplete: true))
+          ).to have_been_made
+          service_instance = VCAP::CloudController::ManagedServiceInstance.find(guid: @service_instance_guid)
+
+          expect(async_delete_service).to have_status_code(202)
+
+          expect(
+            a_request(:delete, deprovision_url(service_instance, accepts_incomplete: true))
+          ).to have_been_made
+          expect { service_instance.reload }.to raise_error(Sequel::Error)
+        end
+      end
+    end
   end
 end
 
