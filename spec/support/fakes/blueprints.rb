@@ -17,6 +17,7 @@ Sham.define do
   long_description    { |index| "long description-#{index} over 255 characters #{'-' * 255}" }
   version             { |index| "version-#{index}" }
   service_credentials { |index| { "creds-key-#{index}" => "creds-val-#{index}" } }
+  params              { |index| { "param-key-#{index}" => "param-value-#{index}" } }
   uaa_id              { |index| "uaa-id-#{index}" }
   domain              { |index| "domain-#{index}.example.com" }
   host                { |index| "host-#{index}" }
@@ -248,6 +249,20 @@ module VCAP::CloudController
     credentials       { Sham.service_credentials }
     space             { Space.make }
   end
+
+  Jobs::Services::ServiceInstanceStateFetch.blueprint do
+    name                  { Sham.name }
+    service_instance_guid { Sham.guid }
+    user_audit_info       { UserAuditInfo.make }
+    request_attrs         { Sham.params }
+  end
+
+  # ServiceInstanceStateFetch.blueprint do
+  #   name                  { Sham.name }
+  #   service_instance_guid { Sham.guid }
+  #   user_audit_info       { UserAuditInfo.make }
+  #   request_attrs         { Sham.params }
+  # end
 
   ManagedServiceInstance.blueprint do
     is_gateway_service         { true }
@@ -564,5 +579,11 @@ module VCAP::CloudController
   end
 
   TestModelRedact.blueprint do
+  end
+
+  UserAuditInfo.blueprint do
+    user_email { Sham.email }
+    user_name { Sham.name }
+    user_guid { Sham.guid }
   end
 end
