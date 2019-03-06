@@ -278,37 +278,6 @@ module VCAP::CloudController
         end
       end
 
-      context 'when a provision operation is in progress' do
-        # desired behavior:
-        # look up the job that is polling the create operation
-        # delete the job
-        # delete the instance
-        before do
-          # route_service_instance.service_instance_operation = ServiceInstanceOperation.make(type: 'create', state: 'in progress')
-
-          job = Jobs::Services::ServiceInstanceStateFetch.make()
-          # expect(job).to be_a_fully_wrapped_job_of Jobs::Services::ServiceInstanceStateFetch
-
-          enqueuer = Jobs::Enqueuer.new(job, queue: 'cc-generic')
-          enqueuer.enqueue
-        end
-
-        it 'should delete the create job' do
-          expect(Delayed::Job.count).to eq 1
-          errors, warnings = service_instance_delete.delete(service_instance_dataset)
-          expect(Delayed::Job.count).to eq 0
-          # errors, warnings = service_instance_delete.delete(service_instance_dataset)
-          # expect(warnings).to be_empty
-          # expect(errors). to be_empty
-          # broker_url = deprovision_url(route_service_instance)
-          # expect(a_request(:delete, broker_url)).to have_been_made
-        end
-
-        # it 'should delete the service instance' do
-        #
-        # end
-      end
-
       context 'when unbinding a service instance fails' do
         before do
           stub_unbind(service_binding_1, status: 500)
