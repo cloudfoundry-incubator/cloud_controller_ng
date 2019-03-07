@@ -8,12 +8,13 @@ module VCAP::CloudController
 
         attr_accessor :name, :service_instance_guid, :request_attrs, :poll_interval, :end_timestamp, :user_audit_info
 
-        def initialize(name, service_instance_guid, user_audit_info, request_attrs, end_timestamp=nil)
+        def initialize(name, service_instance_guid, user_audit_info, request_attrs, end_timestamp=nil, intended_operation=nil)
           @name                  = name
           @service_instance_guid = service_instance_guid
           @request_attrs         = request_attrs
           @end_timestamp         = end_timestamp || new_end_timestamp
           @user_audit_info       = user_audit_info
+          @intended_operation    = intended_operation
           update_polling_interval
         end
 
@@ -50,6 +51,8 @@ module VCAP::CloudController
         def update_with_attributes(last_operation, service_instance)
           ServiceInstance.db.transaction do
             service_instance.lock!
+            return unless @intended_operation == service_instance.last_operation.type
+
             service_instance.save_and_update_operation(
               last_operation: last_operation.slice(:state, :description)
             )

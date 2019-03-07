@@ -167,7 +167,7 @@ RSpec.describe 'Service Broker API integration' do
           ).to have_been_made
           service_instance = VCAP::CloudController::ManagedServiceInstance.find(guid: @service_instance_guid)
 
-          expect(async_delete_service).to have_status_code(202)
+          expect(async_delete_service).to have_status_code(200)
 
           expect(
             a_request(:delete, deprovision_url(service_instance, accepts_incomplete: true))

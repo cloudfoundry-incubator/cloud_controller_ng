@@ -122,6 +122,8 @@ module VCAP::CloudController
         service_instance.guid,
         @services_event_repository.user_audit_info,
         request_attrs,
+        nil,
+        'update',
       )
     end
 

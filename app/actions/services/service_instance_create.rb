@@ -45,6 +45,8 @@ module VCAP::CloudController
         service_instance.guid,
         @services_event_repository.user_audit_info,
         request_attrs,
+        nil,
+        'create',
       )
       enqueuer = Jobs::Enqueuer.new(job, queue: 'cc-generic')
       enqueuer.enqueue

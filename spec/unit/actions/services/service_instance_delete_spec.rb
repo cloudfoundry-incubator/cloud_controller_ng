@@ -313,9 +313,12 @@ module VCAP::CloudController
         end
       end
 
-      context 'when a service instance has an operation in progress' do
+      context 'when a service instance has an update operation in progress' do
         before do
-          route_service_instance.service_instance_operation = ServiceInstanceOperation.make(state: 'in progress')
+          route_service_instance.service_instance_operation = ServiceInstanceOperation.make(
+            state: 'in progress',
+            type: 'update',
+          )
         end
 
         it 'returns an operation in progress error for route and service bindings' do
@@ -328,6 +331,32 @@ module VCAP::CloudController
         it 'still exists and is in an `in progress` state' do
           service_instance_delete.delete(service_instance_dataset)
           expect(route_service_instance.last_operation.reload.state).to eq 'in progress'
+        end
+      end
+
+      context 'when a service instance has an create operation in progress' do
+        let(:service_instance) { ManagedServiceInstance.make }
+
+        before do
+          stub_deprovision(service_instance)
+          service_instance.service_instance_operation = ServiceInstanceOperation.make(
+            state: 'in progress',
+            type: 'create',
+          )
+        end
+
+        it 'should delete the instance' do
+          expect(event_repository).to receive(:record_service_instance_event).
+            with(:delete, instance_of(ManagedServiceInstance), {}).once
+          expect {
+            service_instance_delete.delete([service_instance])
+          }.to change { ServiceInstance.count }.by(-1)
+        end
+
+        it 'tells broker to deprovision the service' do
+          service_instance_delete.delete([service_instance])
+          broker_url = deprovision_url(service_instance)
+          expect(a_request(:delete, broker_url)).to have_been_made
         end
       end
 

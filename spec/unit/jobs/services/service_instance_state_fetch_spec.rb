@@ -21,6 +21,7 @@ module VCAP::CloudController
         end
         let(:broker) { service_instance.service_broker }
         let(:name) { 'fake-name' }
+        let(:intended_operation) { 'create' }
 
         let(:user) { User.make }
         let(:user_email) { 'fake@mail.foo' }
@@ -48,6 +49,8 @@ module VCAP::CloudController
             service_instance.guid,
             UserAuditInfo.new(user_guid: user.guid, user_email: user_email),
             request_attrs,
+            nil,
+            intended_operation,
           )
         end
 
@@ -95,7 +98,8 @@ module VCAP::CloudController
 
           describe 'updating the service instance description' do
             it 'saves the description provided by the broker' do
-              expect { run_job(job) }.to change { service_instance.last_operation.reload.description }.from('description goes here').to('description')
+              expect { run_job(job) }.to change { service_instance.last_operation.reload.description }.
+                from('description goes here').to('description')
             end
 
             context 'when the broker returns a long text description (mysql)' do
@@ -117,7 +121,8 @@ module VCAP::CloudController
               end
 
               it 'does not update the field' do
-                expect { run_job(job) }.not_to change { service_instance.last_operation.reload.description }.from('description goes here')
+                expect { run_job(job) }.not_to change { service_instance.last_operation.reload.description }.
+                  from('description goes here')
               end
             end
           end
@@ -126,6 +131,8 @@ module VCAP::CloudController
             let(:state) { 'succeeded' }
 
             context 'when the last operation type is `delete`' do
+              let(:intended_operation) { 'delete' }
+
               before do
                 service_instance.save_with_new_operation({}, { type: 'delete' })
               end
@@ -142,9 +149,34 @@ module VCAP::CloudController
                 event = Event.find(type: 'audit.service_instance.delete')
                 expect(event).to be
               end
+
+              context 'when intended operation was not `delete`' do
+                let(:intended_operation) { 'something-else' }
+
+                it 'should not delete the service instance' do
+                  run_job(job)
+
+                  expect(ManagedServiceInstance.first(guid: service_instance.guid)).not_to be_nil
+                end
+
+                it 'should not create a delete event' do
+                  run_job(job)
+
+                  expect(Event.find(type: 'audit.service_instance.delete')).not_to be
+                end
+
+                it 'should not update service instance state' do
+                  run_job(job)
+
+                  db_service_instance = ManagedServiceInstance.first(guid: service_instance.guid)
+                  expect(db_service_instance.last_operation.state).not_to eq(state)
+                end
+              end
             end
 
             context 'when the last operation type is `update`' do
+              let(:intended_operation) { 'update' }
+
               before do
                 service_instance.last_operation.type = 'update'
                 service_instance.last_operation.save
