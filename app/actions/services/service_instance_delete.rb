@@ -2,16 +2,19 @@ require 'actions/services/service_key_delete'
 require 'actions/services/route_binding_delete'
 require 'actions/services/locks/deleter_lock'
 require 'actions/service_instance_unshare'
+require 'racecar/racecar'
 
 module VCAP::CloudController
   class ServiceInstanceDelete
-    def initialize(accepts_incomplete: false, event_repository:)
+    def initialize(accepts_incomplete: false, event_repository:, racecar: Racecar::NONE)
       @accepts_incomplete = accepts_incomplete
       @event_repository = event_repository
+      @racecar = racecar
     end
 
     def delete(service_instance_dataset)
       service_instance_dataset.each_with_object([[], []]) do |service_instance, errors_and_warnings|
+        @racecar.drive('service_instance_dataset[i]')
         errors_accumulator, warnings_accumulator = errors_and_warnings
 
         if service_instance.operation_in_progress?
@@ -71,11 +74,13 @@ module VCAP::CloudController
 
     def delete_one_ignoring_pending_provision(service_instance)
       client = VCAP::Services::ServiceClientProvider.provide({ instance: service_instance })
+      @racecar.drive('service_broker_client.deprovision()')
       attributes_to_update = client.deprovision(
        service_instance,
        accepts_incomplete: false
       )
 
+      @racecar.drive('service_instance.destroy')
       service_instance.destroy
       log_audit_event(service_instance)
     end

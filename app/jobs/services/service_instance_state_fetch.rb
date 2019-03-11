@@ -1,4 +1,5 @@
 require_relative 'asynchronous_operations'
+require 'racecar/racecar'
 
 module VCAP::CloudController
   module Jobs
@@ -8,22 +9,25 @@ module VCAP::CloudController
 
         attr_accessor :name, :service_instance_guid, :request_attrs, :poll_interval, :end_timestamp, :user_audit_info
 
-        def initialize(name, service_instance_guid, user_audit_info, request_attrs, end_timestamp=nil, intended_operation=nil)
+        def initialize(name, service_instance_guid, user_audit_info, request_attrs, end_timestamp=nil, intended_operation=nil, racecar=Racecar::NONE)
           @name                  = name
           @service_instance_guid = service_instance_guid
           @request_attrs         = request_attrs
           @end_timestamp         = end_timestamp || new_end_timestamp
           @user_audit_info       = user_audit_info
           @intended_operation    = intended_operation
+          @racecar               = racecar
           update_polling_interval
         end
 
         def perform
+          @racecar.drive('service_instance.get()')
           service_instance = ManagedServiceInstance.first(guid: service_instance_guid)
           return if service_instance.nil?
 
           client = VCAP::Services::ServiceClientProvider.provide(instance: service_instance)
 
+          @racecar.drive('service_broker_client.service_instance_last_operation()')
           last_operation_result = client.fetch_service_instance_last_operation(service_instance)
           update_with_attributes(last_operation_result[:last_operation], service_instance)
 
@@ -50,9 +54,11 @@ module VCAP::CloudController
 
         def update_with_attributes(last_operation, service_instance)
           ServiceInstance.db.transaction do
+            @racecar.drive('service_instance.lock()')
             service_instance.lock!
             return unless @intended_operation == service_instance.last_operation.type
 
+            @racecar.drive("service_instance.last_operation.{state = #{last_operation[:state]}}")
             service_instance.save_and_update_operation(
               last_operation: last_operation.slice(:state, :description)
             )
@@ -62,6 +68,8 @@ module VCAP::CloudController
               record_event(service_instance, request_attrs)
             end
           end
+        ensure
+          @racecar.drive('service_instance.release()')
         end
 
         def end_timestamp_reached
@@ -80,9 +88,13 @@ module VCAP::CloudController
 
         def apply_proposed_changes(service_instance)
           if service_instance.last_operation.type == 'delete'
+            @racecar.drive('service_instance.last_operation.destroy()')
             service_instance.last_operation.destroy
+            @racecar.drive('service_instance.destroy()')
             service_instance.destroy
           else
+            # FIXME: this code doesn't seem to be doing anything?? proposed_changes == {} always?
+            @racecar.drive("service_instance.last_operation.{changes = #{service_instance.last_operation.proposed_changes}}")
             service_instance.save_and_update_operation(service_instance.last_operation.proposed_changes)
           end
         end

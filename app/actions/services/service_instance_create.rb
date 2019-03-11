@@ -1,11 +1,13 @@
 require 'actions/services/database_error_service_resource_cleanup'
 require 'jobs/services/service_instance_state_fetch'
+require 'racecar/racecar'
 
 module VCAP::CloudController
   class ServiceInstanceCreate
-    def initialize(services_event_repository, logger)
+    def initialize(services_event_repository, logger, racecar=Racecar::NONE)
       @services_event_repository = services_event_repository
       @logger = logger
+      @racecar = racecar
     end
 
     def create(request_attrs, accepts_incomplete)
@@ -16,6 +18,7 @@ module VCAP::CloudController
 
       client = VCAP::Services::ServiceClientProvider.provide({ instance: service_instance })
 
+      @racecar.drive('service_broker_client.provision()')
       broker_response = client.provision(
         service_instance,
         accepts_incomplete: accepts_incomplete,
@@ -23,6 +26,8 @@ module VCAP::CloudController
       )
 
       begin
+        state = broker_response[:last_operation][:state]
+        @racecar.drive("service_instance.last_operation.{type = create, state = #{state}}")
         service_instance.save_with_new_operation(broker_response[:instance], broker_response[:last_operation])
       rescue => e
         cleanup_instance_without_db(e, service_instance)
@@ -47,8 +52,10 @@ module VCAP::CloudController
         request_attrs,
         nil,
         'create',
+        @racecar,
       )
       enqueuer = Jobs::Enqueuer.new(job, queue: 'cc-generic')
+      @racecar.drive("service_instance.create.enqueue()")
       enqueuer.enqueue
       @services_event_repository.record_service_instance_event(:start_create, service_instance, request_attrs)
     end

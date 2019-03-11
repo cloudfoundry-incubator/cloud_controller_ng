@@ -19,6 +19,7 @@ module VCAP::CloudController
 
         def enqueue_again
           opts = { queue: 'cc-generic', run_at: Delayed::Job.db_time_now + poll_interval }
+          @racecar && @racecar.drive('retry_job()')
           Jobs::Enqueuer.new(self, opts).enqueue
         end
 
