@@ -46,7 +46,7 @@ RSpec.describe 'ServiceBindings' do
                 'credentials' => { 'secret' => 'key' },
                 'name' => nil,
                 'binding_options' => {},
-                'gateway_data' => nil,
+                'gateway_data' => '',
                 'gateway_name' => '',
                 'syslog_drain_url' => nil,
                 'volume_mounts' => [],
