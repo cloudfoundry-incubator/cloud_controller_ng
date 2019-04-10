@@ -12,7 +12,10 @@ RSpec.describe 'ServicePlans' do
   describe 'GET /v2/service_plans' do
     # we need a service and a plan
     let(:service) { VCAP::CloudController::Service.make }
-    let!(:service_plan) { VCAP::CloudController::ServicePlan.make(service: service) }
+    let!(:service_plan) { VCAP::CloudController::ServicePlan.make(
+      service: service,
+      maintenance_info: '{ "version":  "2.0" }')
+    }
 
     # what is the behaviour?
     # visibile service plans are listed...
@@ -43,7 +46,7 @@ RSpec.describe 'ServicePlans' do
                 'extra' => nil,
                 'free' => false,
                 'maximum_polling_duration' => nil,
-                'maintenance_info' => {'version' => '2.0'},
+                'maintenance_info' => { 'version' => '2.0' },
                 'name' => service_plan.name,
                 'plan_updateable' => nil,
                 'public' => true,
