@@ -8,10 +8,10 @@ module VCAP::CloudController
 
     export_attributes :name, :credentials, :service_plan_guid,
       :space_guid, :gateway_data, :dashboard_url, :type, :last_operation,
-      :tags
+      :tags, :maintenance_info
 
     import_attributes :name, :service_plan_guid,
-      :space_guid, :gateway_data
+      :space_guid, :gateway_data, :maintenance_info
 
     strip_attributes :name
 
@@ -179,6 +179,10 @@ module VCAP::CloudController
 
     def update_last_operation(operation_attrs)
       self.last_operation.update_attributes operation_attrs
+    end
+
+    def parsed_maintenance_info
+      JSON.parse(maintenance_info)
     end
 
     private
