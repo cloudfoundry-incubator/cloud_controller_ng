@@ -181,10 +181,6 @@ module VCAP::CloudController
       self.last_operation.update_attributes operation_attrs
     end
 
-    def parsed_maintenance_info
-      JSON.parse(maintenance_info)
-    end
-
     private
 
     def update_attributes(instance_attrs)

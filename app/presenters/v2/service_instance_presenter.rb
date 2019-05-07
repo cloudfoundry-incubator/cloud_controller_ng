@@ -23,14 +23,25 @@ module CloudController
             end
           end
 
-          obj_hash['maintenance_info'] = {}
-          if obj.maintenance_info
-            obj_hash['maintenance_info'] = obj.parsed_maintenance_info
-          end
+        # def parse_schema(schema)
+        #   return {} unless schema
+        #
+        #   begin
+        #     JSON.parse(schema)
+        #   rescue JSON::ParserError
+        #     {}
+        #   end
+        # end
 
-          if obj.service_plan_id
+          if is_user_provided(obj)
             # TODO: add eager loading to other endpoints and remove this database query
             service_plan = obj.service_plan || VCAP::CloudController::ServicePlan.find(id: obj.service_plan_id)
+
+            obj_hash['maintenance_info'] = {}
+            if obj.maintenance_info
+              # TODO add invalid json corner cases
+              obj_hash['maintenance_info'] = JSON.parse(obj.maintenance_info)
+            end
             obj_hash['service_plan_guid'] = service_plan.guid
             obj_hash['service_guid'] = service_plan.service.guid
             rel_hash['service_url'] = "/v2/services/#{service_plan.service.guid}"
@@ -40,6 +51,12 @@ module CloudController
           end
 
           obj_hash.merge!(rel_hash)
+        end
+
+        private
+
+        def is_user_provided(service_instance)
+          service_instance.service_plan_id
         end
       end
     end

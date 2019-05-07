@@ -275,7 +275,7 @@ module VCAP::CloudController
         let(:service_broker) { ServiceBroker.make(broker_url: 'http://example.com', auth_username: 'auth_username', auth_password: 'auth_password') }
         let(:service) { Service.make(service_broker: service_broker) }
         let(:space) { Space.make }
-        let(:plan) { ServicePlan.make(:v2, service: service) }
+        let(:plan) { ServicePlan.make(:v2, service: service, maintenance_info: '{"version": "v2.0"}') }
         let(:developer) { make_developer_for_space(space) }
         let(:response_body) do
           {
@@ -1032,6 +1032,7 @@ module VCAP::CloudController
             end
           end
         end
+
         context 'when broker returns a null dashboard_url value' do
           let(:response_body) do
             {
@@ -1044,6 +1045,21 @@ module VCAP::CloudController
 
             expect(last_response).to have_status_code(201)
             expect(decoded_response['entity']['dashboard_url']).to be_nil
+          end
+        end
+
+        context 'when the broker returns "maintenance_info" in the catalog' do
+          it 'should store it on a service instance level' do
+            instance = create_managed_service_instance(accepts_incomplete: 'false')
+
+            expect(last_response).to have_status_code(201)
+
+            expect(instance.dashboard_url).to eq('the dashboard_url')
+            last_operation = decoded_response['entity']['last_operation']
+            expect(last_operation['state']).to eq 'succeeded'
+            expect(last_operation['description']).to eq ''
+            expect(last_operation['type']).to eq 'create'
+
           end
         end
       end
