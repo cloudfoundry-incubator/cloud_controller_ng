@@ -53,6 +53,14 @@ module CloudController::Presenters::V2
             )
           end
         end
+
+        context 'when maintenance_info is invalid JSON' do
+          let(:service_instance) { VCAP::CloudController::ManagedServiceInstance.make(maintenance_info: 'invalid') }
+
+          it 'returns empty JSON object for maintenance_info' do
+            expect(subject.entity_hash(controller, service_instance, opts, depth, parents, orphans)['maintenance_info']).to eq({})
+          end
+        end
       end
     end
 

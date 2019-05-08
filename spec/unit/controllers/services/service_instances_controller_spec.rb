@@ -275,7 +275,7 @@ module VCAP::CloudController
         let(:service_broker) { ServiceBroker.make(broker_url: 'http://example.com', auth_username: 'auth_username', auth_password: 'auth_password') }
         let(:service) { Service.make(service_broker: service_broker) }
         let(:space) { Space.make }
-        let(:plan) { ServicePlan.make(:v2, service: service, maintenance_info: '{"version": "v2.0"}') }
+        let(:plan) { ServicePlan.make(:v2, service: service) }
         let(:developer) { make_developer_for_space(space) }
         let(:response_body) do
           {
@@ -1049,17 +1049,14 @@ module VCAP::CloudController
         end
 
         context 'when the broker returns "maintenance_info" in the catalog' do
+          let(:plan) { ServicePlan.make(:v2, service: service, maintenance_info: '{"version": "2.0"}') }
+
           it 'should store it on a service instance level' do
-            instance = create_managed_service_instance(accepts_incomplete: 'false')
+            create_managed_service_instance
 
             expect(last_response).to have_status_code(201)
-
-            expect(instance.dashboard_url).to eq('the dashboard_url')
-            last_operation = decoded_response['entity']['last_operation']
-            expect(last_operation['state']).to eq 'succeeded'
-            expect(last_operation['description']).to eq ''
-            expect(last_operation['type']).to eq 'create'
-
+            maintenance_info = decoded_response['entity']['maintenance_info']
+            expect(maintenance_info).to eq({ 'version' => '2.0' })
           end
         end
       end
@@ -2543,6 +2540,31 @@ module VCAP::CloudController
           put "/v2/service_instances/#{service_instance.guid}?accepts_incomplete=true", '{}'
           expect(last_response.status).to eq(400)
           expect(last_response.body).to match /paid service plans are not allowed/
+        end
+      end
+
+      context 'when maintenance_info is provided' do
+        let(:body) do
+          MultiJson.dump(
+            maintenance_info: {
+              version: '2.0',
+            }
+          )
+        end
+        let(:service_plan) { ServicePlan.make(:v2, service: service, maintenance_info: '{"version": "2.0"}') }
+        let(:service_instance) { ManagedServiceInstance.make(service_plan: service_plan, dashboard_url: 'http://dashboard_url.com', maintenance_info: '{"version":"1.0"}') }
+
+        before do
+          stub_request(:patch, service_broker_url).
+            with(basic_auth: basic_auth(service_instance: service_instance)).
+            to_return(status: status, body: response_body)
+        end
+
+        it 'updates the service instance model with the new value' do
+          put "/v2/service_instances/#{service_instance.guid}", body
+
+          expect(last_response).to have_status_code 201
+          expect(service_instance.reload.maintenance_info).to eq('{"version":"2.0"}')
         end
       end
     end
