@@ -634,5 +634,16 @@ module VCAP::CloudController
         expect(service_instance.to_hash['last_operation']['updated_at']).to be
       end
     end
+
+    describe 'maintenance_info' do
+      let(:expected_value) { { version: '1.0' }.stringify_keys }
+      let(:maintenance_info) { { maintenance_info: expected_value } }
+
+      it 'should serialize and deserialize it as a JSON' do
+        service_instance.update_service_instance(maintenance_info)
+        service_instance.reload
+        expect(service_instance.maintenance_info).to eq(expected_value)
+      end
+    end
   end
 end

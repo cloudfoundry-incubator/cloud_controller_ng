@@ -2545,11 +2545,7 @@ module VCAP::CloudController
 
       context 'when maintenance_info is provided' do
         let(:body) do
-          MultiJson.dump(
-            maintenance_info: {
-              version: '2.0',
-            }
-          )
+          { maintenance_info: { version: '2.0' } }.to_json
         end
         let(:service_plan) { ServicePlan.make(:v2, service: service, maintenance_info: '{"version": "2.0"}') }
         let(:service_instance) { ManagedServiceInstance.make(service_plan: service_plan, dashboard_url: 'http://dashboard_url.com', maintenance_info: '{"version":"1.0"}') }

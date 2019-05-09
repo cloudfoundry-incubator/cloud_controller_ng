@@ -17,6 +17,8 @@ module VCAP::CloudController
 
     plugin :after_initialize
 
+    serialize_attributes :json, :maintenance_info
+
     add_association_dependencies service_instance_operation: :destroy
 
     def validation_policies

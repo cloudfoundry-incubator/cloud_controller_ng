@@ -365,7 +365,7 @@ module VCAP::CloudController
     end
 
     describe 'updating maintenance_info' do
-      let(:maintenance_info) {
+      let(:new_maintenance_info) {
         {
           'version' => '2.0',
         }
@@ -379,12 +379,13 @@ module VCAP::CloudController
 
       let(:request_attrs) {
         {
-          'maintenance_info' => maintenance_info
+          'maintenance_info' => new_maintenance_info
         }
       }
 
       let(:broker_body) { {} }
       let(:stub_opts) { { status: 202, body: broker_body.to_json } }
+      let(:service_instance) { ManagedServiceInstance.make(maintenance_info: previous_maintenance_info.to_json) }
 
       before do
         stub_update(service_instance, stub_opts)
@@ -396,9 +397,9 @@ module VCAP::CloudController
         expect(
           a_request(:patch, update_url(service_instance)).with(
             body: hash_including({
-              'maintenance_info' => maintenance_info,
+              'maintenance_info' => new_maintenance_info,
               'previous_values' => {
-                'plan_id' => old_service_plan.broker_provided_id,
+                'plan_id' => service_instance.service_plan.broker_provided_id,
                 'service_id' => service_instance.service.broker_provided_id,
                 'organization_id' => service_instance.organization.guid,
                 'space_id' => service_instance.space.guid,
@@ -406,6 +407,14 @@ module VCAP::CloudController
             })
           )
         ).to have_been_made.once
+      end
+
+      it 'updates the service instance maintenance_info in the model' do
+        service_instance_update.update_service_instance(service_instance, request_attrs)
+
+        service_instance.reload
+
+        expect(service_instance.maintenance_info).to eq(new_maintenance_info)
       end
     end
 
