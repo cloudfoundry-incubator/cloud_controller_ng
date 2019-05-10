@@ -2547,20 +2547,54 @@ module VCAP::CloudController
         let(:body) do
           { maintenance_info: { version: '2.0' } }.to_json
         end
+        let(:old_maintenance_info) { { 'version' => '1.0' } }
         let(:service_plan) { ServicePlan.make(:v2, service: service, maintenance_info: '{"version": "2.0"}') }
-        let(:service_instance) { ManagedServiceInstance.make(service_plan: service_plan, dashboard_url: 'http://dashboard_url.com', maintenance_info: '{"version":"1.0"}') }
+        let(:service_instance) { ManagedServiceInstance.make(service_plan: service_plan, maintenance_info: old_maintenance_info) }
 
-        before do
-          stub_request(:patch, service_broker_url).
-            with(basic_auth: basic_auth(service_instance: service_instance)).
-            to_return(status: status, body: response_body)
+        context 'when the broker responds synchronously' do
+          let(:status) { 200 }
+
+          before do
+            stub_request(:patch, service_broker_url).
+              with(basic_auth: basic_auth(service_instance: service_instance)).
+              to_return(status: status, body: response_body)
+          end
+
+          it 'updates the service instance model with the new value' do
+            put "/v2/service_instances/#{service_instance.guid}", body
+
+            expect(last_response).to have_status_code 201
+            expect(service_instance.reload.maintenance_info).to eq({ 'version' => '2.0' })
+          end
         end
 
-        it 'updates the service instance model with the new value' do
-          put "/v2/service_instances/#{service_instance.guid}", body
+        context 'when the broker responds asynchronously' do
+          let(:status) { 202 }
 
-          expect(last_response).to have_status_code 201
-          expect(service_instance.reload.maintenance_info).to eq('{"version":"2.0"}')
+          before do
+            stub_request(:patch, "#{service_broker_url}?accepts_incomplete=true").
+              to_return(status: status, body: response_body)
+
+            put "/v2/service_instances/#{service_instance.guid}?accepts_incomplete=true", body
+
+            stub_request(:get, last_operation_state_url(service_instance)).
+              to_return(status: 200, body: {
+              state: 'succeeded',
+              description: 'Done'
+            }.to_json)
+          end
+
+          # TODO do we need the test at this level or unit is sufficient?
+          it 'keeps the old maintenance_info in the model' do
+            expect(service_instance.reload.maintenance_info).to eq(old_maintenance_info)
+          end
+
+          it 'updates the maintenance_info for the instance' do
+            Delayed::Job.last.invoke_job
+
+            expect(service_instance.reload.maintenance_info).to eq({ 'version' => '2.0' })
+            expect(a_request(:patch, /#{service_broker_url}/)).to have_been_made.times(1)
+          end
         end
       end
     end
@@ -4934,6 +4968,7 @@ module VCAP::CloudController
         end
       end
     end
+
     describe 'Validation messages' do
       let(:paid_quota) { QuotaDefinition.make(total_services: 1) }
       let(:free_quota_with_no_services) do

@@ -371,7 +371,7 @@ module VCAP::CloudController
         }
       }
 
-      let(:previous_maintenance_info) {
+      let(:old_maintenance_info) {
         {
           'version' => '1.0',
         }
@@ -379,19 +379,19 @@ module VCAP::CloudController
 
       let(:request_attrs) {
         {
-          'maintenance_info' => new_maintenance_info
+          'maintenance_info' => new_maintenance_info,
         }
       }
 
       let(:broker_body) { {} }
-      let(:stub_opts) { { status: 202, body: broker_body.to_json } }
-      let(:service_instance) { ManagedServiceInstance.make(maintenance_info: previous_maintenance_info.to_json) }
+      let(:stub_opts) { { status: 200, body: broker_body.to_json } }
+      let(:service_instance) { ManagedServiceInstance.make(maintenance_info: old_maintenance_info) }
 
       before do
         stub_update(service_instance, stub_opts)
       end
 
-      it 'sends maintenance_info to broker' do
+      it 'sends maintenance_info to the broker' do
         service_instance_update.update_service_instance(service_instance, request_attrs)
 
         expect(
@@ -415,6 +415,57 @@ module VCAP::CloudController
         service_instance.reload
 
         expect(service_instance.maintenance_info).to eq(new_maintenance_info)
+      end
+
+      context 'when the broker returns an error' do
+        before do
+          stub_update(service_instance, status: 418)
+        end
+
+        it 'rolls back the old maintenance_info' do
+          expect {
+            service_instance_update.update_service_instance(service_instance, request_attrs)
+          }.to raise_error(VCAP::Services::ServiceBrokers::V2::Errors::ServiceBrokerRequestRejected)
+
+          service_instance.reload
+          expect(service_instance.maintenance_info).to eq(old_maintenance_info)
+        end
+      end
+
+      context 'when the broker responds asynchronously' do
+        let(:service_instance_update) do
+          ServiceInstanceUpdate.new(
+            accepts_incomplete: true,
+            services_event_repository: services_event_repo
+          )
+        end
+
+        before do
+          stub_update(service_instance, accepts_incomplete: true, status: 202)
+        end
+
+        it 'keeps the old maintenance_info' do
+          service_instance_update.update_service_instance(service_instance, request_attrs)
+
+          expect(service_instance.maintenance_info).to eq(old_maintenance_info)
+        end
+      end
+
+      context 'when maintenance_info is missing from the body' do
+        let(:request_attrs) {
+          {
+            'parameters' => updated_parameters,
+            'name' => updated_name,
+            'tags' => updated_tags,
+            'service_plan_guid' => new_service_plan.guid
+          }
+        }
+
+        it 'remains unchanged in the model' do
+          service_instance_update.update_service_instance(service_instance, request_attrs)
+
+          expect(service_instance.reload.maintenance_info).to eq(old_maintenance_info)
+        end
       end
     end
 

@@ -2,9 +2,7 @@ require 'actions/services/locks/updater_lock'
 
 module VCAP::CloudController
   class ServiceInstanceUpdate
-    # FIXME don't update maintenance info before the broker respond successfully
-    KEYS_TO_UPDATE_CC_ONLY = %w(tags name space_guid maintenance_info).freeze
-    # FIXME do we need KEYS_TO_UPDATE_CC constant ?
+    KEYS_TO_UPDATE_CC_ONLY = %w(tags name space_guid).freeze
     KEYS_TO_UPDATE_CC = KEYS_TO_UPDATE_CC_ONLY + ['service_plan_guid']
 
     def initialize(accepts_incomplete: false, services_event_repository: nil)
@@ -23,7 +21,10 @@ module VCAP::CloudController
 
       if update_broker_needed?(request_attrs, cached_service_instance['service_plan_guid'], service_instance)
         handle_broker_update(cached_service_instance, lock, previous_values, request_attrs, service_instance)
-        update_deferred_attrs(service_instance, service_plan_guid: request_attrs.fetch('service_plan_guid', false))
+        update_deferred_attrs(service_instance,
+                              service_plan_guid: request_attrs.fetch('service_plan_guid', false),
+                              maintenance_info: request_attrs.fetch('maintenance_info', false)
+                             )
       else
         lock.synchronous_unlock!
       end
@@ -90,9 +91,12 @@ module VCAP::CloudController
       err
     end
 
-    def update_deferred_attrs(service_instance, service_plan_guid:)
-      if service_plan_guid && !service_instance.operation_in_progress?
-        service_instance.update_service_instance(service_plan: ServicePlan.find(guid: service_plan_guid))
+    def update_deferred_attrs(service_instance, service_plan_guid:, maintenance_info:)
+      unless service_instance.operation_in_progress?
+        attrs_to_update = {}
+        attrs_to_update[:service_plan] = ServicePlan.find(guid: service_plan_guid) if service_plan_guid
+        attrs_to_update[:maintenance_info] = maintenance_info if maintenance_info
+        service_instance.update_service_instance(attrs_to_update)
       end
     end
 
