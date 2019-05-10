@@ -17,7 +17,8 @@ module VCAP::CloudController
     let(:allow_context_updates) { false }
     let(:service) { Service.make(plan_updateable: true, service_broker: service_broker, allow_context_updates: allow_context_updates) }
     let(:old_service_plan) { ServicePlan.make(:v2, service: service) }
-    let(:new_service_plan) { ServicePlan.make(:v2, service: service) }
+    let(:new_plan_maintenance_info) {}
+    let(:new_service_plan) { ServicePlan.make(:v2, service: service, maintenance_info: new_plan_maintenance_info) }
     let(:service_instance) { ManagedServiceInstance.make(service_plan: old_service_plan,
                                                          tags: [],
                                                          name: 'Old name')
@@ -31,7 +32,8 @@ module VCAP::CloudController
         'parameters' => updated_parameters,
         'name' => updated_name,
         'tags' => updated_tags,
-        'service_plan_guid' => new_service_plan.guid
+        'service_plan_guid' => new_service_plan.guid,
+        'maintenance_info' => '{"version": "1.4.5a"}',
       }
     }
 
@@ -48,6 +50,7 @@ module VCAP::CloudController
         expect(service_instance.name).to eq(updated_name)
         expect(service_instance.tags).to eq(updated_tags)
         expect(service_instance.service_plan.guid).to eq(new_service_plan.guid)
+        expect(service_instance.maintenance_info).to eq('{"version": "1.4.5a"}')
 
         expect(
           a_request(:patch, update_url(service_instance)).with(
@@ -58,7 +61,7 @@ module VCAP::CloudController
                 'plan_id' => old_service_plan.broker_provided_id,
                 'service_id' => service_instance.service.broker_provided_id,
                 'organization_id' => service_instance.organization.guid,
-                'space_id' => service_instance.space.guid
+                'space_id' => service_instance.space.guid,
               }
             })
           )
@@ -209,6 +212,7 @@ module VCAP::CloudController
             ).to_not have_been_made
           end
         end
+
         context 'and changed' do
           let(:request_attrs) {
             {
@@ -234,6 +238,28 @@ module VCAP::CloudController
             ).to have_been_made.once
 
             expect(service_instance.service_plan).to eq(new_service_plan)
+          end
+
+          context 'new plan has maintenance_info' do
+            let(:new_plan_maintenance_info) { '{"version": "1.0"}' }
+
+            it 'should update the service instance maintenance_info for new plan' do
+              service_instance_update.update_service_instance(service_instance, request_attrs)
+
+              expect(service_instance.reload.maintenance_info).to eq(new_service_plan.maintenance_info)
+            end
+          end
+
+          context 'new plan does not have maintenance_info' do
+            let(:new_plan_maintenance_info) { nil }
+
+            it 'should update the service instance maintenance_info for new plan' do
+              service_instance.maintenance_info = { 'version': '1.0' }
+              service_instance.save
+              service_instance_update.update_service_instance(service_instance, request_attrs)
+
+              expect(service_instance.reload.maintenance_info).to eq(new_service_plan.maintenance_info)
+            end
           end
         end
       end
@@ -409,26 +435,29 @@ module VCAP::CloudController
         ).to have_been_made.once
       end
 
-      it 'updates the service instance maintenance_info in the model' do
-        service_instance_update.update_service_instance(service_instance, request_attrs)
 
-        service_instance.reload
-
-        expect(service_instance.maintenance_info).to eq(new_maintenance_info)
-      end
-
-      context 'when the broker returns an error' do
-        before do
-          stub_update(service_instance, status: 418)
-        end
-
-        it 'rolls back the old maintenance_info' do
-          expect {
-            service_instance_update.update_service_instance(service_instance, request_attrs)
-          }.to raise_error(VCAP::Services::ServiceBrokers::V2::Errors::ServiceBrokerRequestRejected)
+      context 'when the broker responds synchronously' do
+        it 'updates the service instance maintenance_info in the model' do
+          service_instance_update.update_service_instance(service_instance, request_attrs)
 
           service_instance.reload
-          expect(service_instance.maintenance_info).to eq(old_maintenance_info)
+
+          expect(service_instance.maintenance_info).to eq(new_maintenance_info)
+        end
+
+        context 'when the broker returns an error' do
+          before do
+            stub_update(service_instance, status: 418)
+          end
+
+          it 'rolls back the old maintenance_info' do
+            expect {
+              service_instance_update.update_service_instance(service_instance, request_attrs)
+            }.to raise_error(VCAP::Services::ServiceBrokers::V2::Errors::ServiceBrokerRequestRejected)
+
+            service_instance.reload
+            expect(service_instance.maintenance_info).to eq(old_maintenance_info)
+          end
         end
       end
 
@@ -451,13 +480,12 @@ module VCAP::CloudController
         end
       end
 
-      context 'when maintenance_info is missing from the body' do
+      context 'when maintenance_info is missing from the body and no plan changed' do
         let(:request_attrs) {
           {
             'parameters' => updated_parameters,
             'name' => updated_name,
             'tags' => updated_tags,
-            'service_plan_guid' => new_service_plan.guid
           }
         }
 

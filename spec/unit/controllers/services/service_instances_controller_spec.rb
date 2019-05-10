@@ -2569,31 +2569,31 @@ module VCAP::CloudController
         end
 
         context 'when the broker responds asynchronously' do
-          let(:status) { 202 }
-
           before do
             stub_request(:patch, "#{service_broker_url}?accepts_incomplete=true").
-              to_return(status: status, body: response_body)
+              to_return(status: 202, body: response_body)
 
             put "/v2/service_instances/#{service_instance.guid}?accepts_incomplete=true", body
-
-            stub_request(:get, last_operation_state_url(service_instance)).
-              to_return(status: 200, body: {
-              state: 'succeeded',
-              description: 'Done'
-            }.to_json)
           end
 
-          # TODO do we need the test at this level or unit is sufficient?
           it 'keeps the old maintenance_info in the model' do
             expect(service_instance.reload.maintenance_info).to eq(old_maintenance_info)
           end
 
-          it 'updates the maintenance_info for the instance' do
-            Delayed::Job.last.invoke_job
+          context 'when the delayed job finishes successfully' do
+            before do
+              stub_request(:get, last_operation_state_url(service_instance)).
+                to_return(status: 200, body: {
+                state: 'succeeded',
+                description: 'Done'
+              }.to_json)
+              Delayed::Job.last.invoke_job
+            end
 
-            expect(service_instance.reload.maintenance_info).to eq({ 'version' => '2.0' })
-            expect(a_request(:patch, /#{service_broker_url}/)).to have_been_made.times(1)
+            it 'updates the maintenance_info for the instance' do
+              expect(service_instance.reload.maintenance_info).to eq({ 'version' => '2.0' })
+              expect(a_request(:patch, /#{service_broker_url}/)).to have_been_made.times(1)
+            end
           end
         end
       end

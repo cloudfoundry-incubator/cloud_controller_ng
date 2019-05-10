@@ -94,7 +94,11 @@ module VCAP::CloudController
     def update_deferred_attrs(service_instance, service_plan_guid:, maintenance_info:)
       unless service_instance.operation_in_progress?
         attrs_to_update = {}
-        attrs_to_update[:service_plan] = ServicePlan.find(guid: service_plan_guid) if service_plan_guid
+        if service_plan_guid
+          service_plan = ServicePlan.find(guid: service_plan_guid)
+          attrs_to_update[:service_plan] = service_plan
+          attrs_to_update[:maintenance_info] = service_plan.maintenance_info
+        end
         attrs_to_update[:maintenance_info] = maintenance_info if maintenance_info
         service_instance.update_service_instance(attrs_to_update)
       end
