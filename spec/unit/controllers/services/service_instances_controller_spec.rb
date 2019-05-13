@@ -2518,6 +2518,29 @@ module VCAP::CloudController
             expect(instance.last_operation.state).to eq 'succeeded'
           end
         end
+
+        context 'when maintenance_info is not provided in the request, but only in the new plan' do
+          let(:new_service_plan) { ServicePlan.make(:v2, service: service, maintenance_info: '{"version": "1.0"}') }
+          let(:status) { 202 }
+
+          context 'when the delayed job finishes successfully' do
+            before do
+              put "/v2/service_instances/#{service_instance.guid}?accepts_incomplete=true", body
+
+              stub_request(:get, last_operation_state_url(service_instance)).
+                to_return(status: 200, body: {
+                state: 'succeeded',
+                description: 'Done'
+              }.to_json)
+
+              Delayed::Job.last.invoke_job
+            end
+
+            it 'uses the new plan maintenance_info for the instance' do
+              expect(service_instance.reload.maintenance_info).to eq(new_service_plan.maintenance_info)
+            end
+          end
+        end
       end
 
       context 'when accepts_incomplete is not true or false strings' do

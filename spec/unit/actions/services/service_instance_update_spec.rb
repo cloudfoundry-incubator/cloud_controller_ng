@@ -243,22 +243,22 @@ module VCAP::CloudController
           context 'new plan has maintenance_info' do
             let(:new_plan_maintenance_info) { '{"version": "1.0"}' }
 
-            it 'should update the service instance maintenance_info for new plan' do
+            it 'should update the service instance maintenance_info to its new plan maintenance_info' do
               service_instance_update.update_service_instance(service_instance, request_attrs)
 
-              expect(service_instance.reload.maintenance_info).to eq(new_service_plan.maintenance_info)
+              expect(service_instance.reload.maintenance_info).to eq(new_plan_maintenance_info)
             end
           end
 
           context 'new plan does not have maintenance_info' do
-            let(:new_plan_maintenance_info) { nil }
+            let(:new_plan_maintenance_info) {}
 
-            it 'should update the service instance maintenance_info for new plan' do
-              service_instance.maintenance_info = { 'version': '1.0' }
+            it 'should reset the service instance maintenance_info to nil' do
+              service_instance.maintenance_info = { 'version': '0.1' }
               service_instance.save
               service_instance_update.update_service_instance(service_instance, request_attrs)
 
-              expect(service_instance.reload.maintenance_info).to eq(new_service_plan.maintenance_info)
+              expect(service_instance.reload.maintenance_info).to eq(nil)
             end
           end
         end
@@ -435,7 +435,6 @@ module VCAP::CloudController
         ).to have_been_made.once
       end
 
-
       context 'when the broker responds synchronously' do
         it 'updates the service instance maintenance_info in the model' do
           service_instance_update.update_service_instance(service_instance, request_attrs)
@@ -450,7 +449,7 @@ module VCAP::CloudController
             stub_update(service_instance, status: 418)
           end
 
-          it 'rolls back the old maintenance_info' do
+          it 'keeps the old maintenance_info' do
             expect {
               service_instance_update.update_service_instance(service_instance, request_attrs)
             }.to raise_error(VCAP::Services::ServiceBrokers::V2::Errors::ServiceBrokerRequestRejected)
@@ -478,21 +477,41 @@ module VCAP::CloudController
 
           expect(service_instance.maintenance_info).to eq(old_maintenance_info)
         end
-      end
 
-      context 'when maintenance_info is missing from the body and no plan changed' do
-        let(:request_attrs) {
-          {
-            'parameters' => updated_parameters,
-            'name' => updated_name,
-            'tags' => updated_tags,
-          }
-        }
-
-        it 'remains unchanged in the model' do
+        it 'saves the new maintenance_info as a proposed change' do
           service_instance_update.update_service_instance(service_instance, request_attrs)
 
-          expect(service_instance.reload.maintenance_info).to eq(old_maintenance_info)
+          expect(service_instance.last_operation.proposed_changes).to include({ maintenance_info: new_maintenance_info })
+        end
+
+        context 'no maintenance_info is provided in the request' do
+          let(:request_attrs) { { 'service_plan_guid' => new_service_plan.guid } }
+
+          context 'the new plan has a maintenance_info' do
+            let(:new_plan_maintenance_info) { '{"version": "1.0"}' }
+
+            it 'saves the new plan maintenance_info as a proposed change' do
+              service_instance_update.update_service_instance(service_instance, request_attrs)
+
+              expect(service_instance.last_operation.proposed_changes).to include({ maintenance_info: new_plan_maintenance_info })
+            end
+          end
+        end
+
+        context 'when maintenance_info is missing from the body and no plan changed' do
+          let(:request_attrs) {
+            {
+              'parameters' => updated_parameters,
+              'name' => updated_name,
+              'tags' => updated_tags,
+            }
+          }
+
+          it 'remains unchanged in the model' do
+            service_instance_update.update_service_instance(service_instance, request_attrs)
+
+            expect(service_instance.reload.maintenance_info).to eq(old_maintenance_info)
+          end
         end
       end
     end
