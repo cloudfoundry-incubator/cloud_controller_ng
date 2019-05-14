@@ -79,7 +79,7 @@ module VCAP::CloudController
         accepts_incomplete: accepts_incomplete,
         arbitrary_parameters: request_attrs['parameters'],
         previous_values: previous_values,
-        maintenance_info: request_attrs['maintenance_info'],
+        maintenance_info: request_attrs['maintenance_info'] || service_plan.maintenance_info,
       )
 
       service_instance.last_operation.update_attributes(response[:last_operation])

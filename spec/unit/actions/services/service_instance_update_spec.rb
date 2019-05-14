@@ -472,7 +472,7 @@ module VCAP::CloudController
           stub_update(service_instance, accepts_incomplete: true, status: 202)
         end
 
-        it 'keeps the old maintenance_info' do
+        it 'keeps the old maintenance_info before the operation is completed' do
           service_instance_update.update_service_instance(service_instance, request_attrs)
 
           expect(service_instance.maintenance_info).to eq(old_maintenance_info)
@@ -484,16 +484,50 @@ module VCAP::CloudController
           expect(service_instance.last_operation.proposed_changes).to include({ maintenance_info: new_maintenance_info })
         end
 
-        context 'no maintenance_info is provided in the request' do
+        context 'when maintenance_info is present both in the request and for the new plan' do
+          let(:new_plan_maintenance_info) { '{"version": "1.0"}' }
+          let(:request_attrs) {
+            {
+              'service_plan_guid' => new_service_plan.guid,
+              'maintenance_info' => new_maintenance_info,
+            }
+          }
+
+          it 'uses the maintenance_info from the request body' do
+            service_instance_update.update_service_instance(service_instance, request_attrs)
+
+            expect(service_instance.last_operation.proposed_changes).to include({ maintenance_info: new_maintenance_info })
+          end
+        end
+
+        context 'when maintenance_info is missing from the request body' do
           let(:request_attrs) { { 'service_plan_guid' => new_service_plan.guid } }
 
-          context 'the new plan has a maintenance_info' do
+          context 'but the new plan has a maintenance_info' do
             let(:new_plan_maintenance_info) { '{"version": "1.0"}' }
 
             it 'saves the new plan maintenance_info as a proposed change' do
               service_instance_update.update_service_instance(service_instance, request_attrs)
 
               expect(service_instance.last_operation.proposed_changes).to include({ maintenance_info: new_plan_maintenance_info })
+            end
+
+            it 'sends the new plan maintenance_info to the broker' do
+              service_instance_update.update_service_instance(service_instance, request_attrs)
+
+              expect(
+                a_request(:patch, update_url(service_instance, accepts_incomplete: true)).with(
+                  body: hash_including({
+                    'maintenance_info' => new_plan_maintenance_info,
+                    'previous_values' => {
+                      'plan_id' => service_instance.service_plan.broker_provided_id,
+                      'service_id' => service_instance.service.broker_provided_id,
+                      'organization_id' => service_instance.organization.guid,
+                      'space_id' => service_instance.space.guid,
+                    }
+                  })
+                )
+              ).to have_been_made.once
             end
           end
         end

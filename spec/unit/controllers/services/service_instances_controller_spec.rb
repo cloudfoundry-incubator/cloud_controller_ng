@@ -2519,7 +2519,7 @@ module VCAP::CloudController
           end
         end
 
-        context 'when maintenance_info is not provided in the request, but only in the new plan' do
+        context 'when maintenance_info is NOT provided in the request, but it exists for the new plan' do
           let(:new_service_plan) { ServicePlan.make(:v2, service: service, maintenance_info: '{"version": "1.0"}') }
           let(:status) { 202 }
 
@@ -2536,7 +2536,7 @@ module VCAP::CloudController
               Delayed::Job.last.invoke_job
             end
 
-            it 'uses the new plan maintenance_info for the instance' do
+            it 'stores the new plan maintenance_info for the instance' do
               expect(service_instance.reload.maintenance_info).to eq(new_service_plan.maintenance_info)
             end
           end
