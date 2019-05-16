@@ -34,6 +34,7 @@ module VCAP::CloudController
         end
       end
 
+      # TODO: do we need to update this too?
       def validate_maintenance_info_update(service_plan, maintenance_info)
         return unless maintenance_info
 

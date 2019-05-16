@@ -148,6 +148,24 @@ module VCAP::Services::ServiceBrokers::V2
         expect(plan.errors.messages.first).to include 'Maintenance info must be a hash, but has value "true"'
       end
 
+      it 'validates that @maintenance_info has a version' do
+        plan_attrs['maintenance_info'] = {}
+
+        expect(plan).to_not be_valid
+        expect(plan.errors.messages.first).to include 'Maintenance info version is required'
+      end
+
+      # MI:
+      # - may be specified
+      # - must be a hash
+      # - MUST contain 'version'
+      # - must not contain anything else
+      # Version:
+      # - must be a string
+      # - must be semver
+      #
+      # Length!!
+      #
       it 'validates that @maximum_polling_duration is an integer' do
         plan_attrs['maximum_polling_duration'] = 'true'
 
