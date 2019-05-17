@@ -59,10 +59,11 @@ module VCAP::Services::ServiceBrokers::V2
     end
 
     def validate_maintenance_info!
-      # return unless @maitenance_info
+      return if @maintenance_info.nil?
 
-      validate_hash!(:maintenance_info, @maintenance_info) if @maintenance_info
-      validate_string!(:maintenance_info_version, @maintenance_info['version'], required: true) if @maintenance_info
+      validate_hash!(:maintenance_info, @maintenance_info)
+      # validate_string!(:maintenance_info_version, @maintenance_info['version'], required: true)
+      validate_semver!(:maintenance_info_version, @maintenance_info['version'], required: true)
     end
 
     def validate_schemas!

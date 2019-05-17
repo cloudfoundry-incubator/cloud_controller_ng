@@ -15,7 +15,7 @@ module VCAP::Services::ServiceBrokers::V2
         'schemas'     => opts[:schemas] || {},
         'plan_updateable' => opts[:plan_updateable],
         'maximum_polling_duration' => opts[:maximum_polling_duration],
-        'maintenance_info' => opts[:maintenance_info] || {}
+        'maintenance_info' => opts[:maintenance_info] || nil
       }
     end
     let(:catalog_service) { instance_double(VCAP::Services::ServiceBrokers::V2::CatalogService) }
@@ -34,7 +34,7 @@ module VCAP::Services::ServiceBrokers::V2
         expect(plan.bindable).to be true
         expect(plan.plan_updateable).to be true
         expect(plan.maximum_polling_duration).to be 3600
-        expect(plan.maintenance_info).to eq({})
+        expect(plan.maintenance_info).to be nil
         expect(plan.errors).to be_empty
       end
 
@@ -46,6 +46,13 @@ module VCAP::Services::ServiceBrokers::V2
 
       it 'defaults schemas to an empty hash' do
         expect(plan.schemas).to be {}
+      end
+
+      it 'allows a valid maintenance_info object' do
+        plan_attrs['maintenance_info'] = { 'version' => '1.2.3-alpha1' }
+
+        expect(plan).to be_valid
+        expect(plan.errors.messages).to be_empty
       end
     end
 
@@ -155,13 +162,28 @@ module VCAP::Services::ServiceBrokers::V2
         expect(plan.errors.messages.first).to include 'Maintenance info version is required'
       end
 
+      it 'validates that @maintenance_info version is a string' do
+        plan_attrs['maintenance_info'] = { 'version' => 42 }
+
+        expect(plan).to_not be_valid
+        expect(plan.errors.messages.first).to include 'Maintenance info version must be a string, but has value 42'
+      end
+
+      it 'validates that @maintenance_info version is semver compliant' do
+        plan_attrs['maintenance_info'] = { 'version' => '1beta' }
+
+        expect(plan).to_not be_valid
+        expect(plan.errors.messages.first).to include 'Maintenance info version must be a Semantic Version, but has value "1beta"'
+      end
+
+
       # MI:
-      # - may be specified
-      # - must be a hash
-      # - MUST contain 'version'
+      # -X may be specified
+      # -X must be a hash
+      # -X MUST contain 'version'
       # - must not contain anything else
       # Version:
-      # - must be a string
+      # -X must be a string
       # - must be semver
       #
       # Length!!
