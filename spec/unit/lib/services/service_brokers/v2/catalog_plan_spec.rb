@@ -176,18 +176,20 @@ module VCAP::Services::ServiceBrokers::V2
         expect(plan.errors.messages.first).to include 'Maintenance info version must be a Semantic Version, but has value "1beta"'
       end
 
+      it 'validates that @maintenance_info object contains only the version' do
+        plan_attrs['maintenance_info'] = { 'version' => '1.2.3', 'foo' => 'bar' }
 
-      # MI:
-      # -X may be specified
-      # -X must be a hash
-      # -X MUST contain 'version'
-      # - must not contain anything else
-      # Version:
-      # -X must be a string
-      # - must be semver
-      #
-      # Length!!
-      #
+        expect(plan).to_not be_valid
+        expect(plan.errors.messages.first).to include 'Maintenance info contains invalid key "foo"'
+      end
+
+      it 'validates that @maintenance_info object serializes to 100 characters or fewer' do
+        plan_attrs['maintenance_info'] = { 'version' => '123456789012345678901234567890.1234567891234567891234567890.123456789123456789123456789' }
+
+        expect(plan).to_not be_valid
+        expect(plan.errors.messages.first).to include 'Maintenance info must serialize to 100 characters or fewer in JSON, but serializes to 101 characters'
+      end
+
       it 'validates that @maximum_polling_duration is an integer' do
         plan_attrs['maximum_polling_duration'] = 'true'
 

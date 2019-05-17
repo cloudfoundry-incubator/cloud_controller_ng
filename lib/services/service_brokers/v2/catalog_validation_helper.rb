@@ -77,6 +77,13 @@ module VCAP::Services::ServiceBrokers::V2
       end
     end
 
+    def validate_length_as_json!(name, input, limit)
+      length = input.to_json.length
+      if length > limit
+        errors.add("#{human_readable_attr_name(name)} must serialize to #{limit} characters or fewer in JSON, but serializes to #{length} characters")
+      end
+    end
+
     def is_an_array_of(klass, input)
       input.is_a?(Array) && input.all? { |i| i.is_a?(klass) }
     end

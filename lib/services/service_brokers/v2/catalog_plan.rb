@@ -51,8 +51,6 @@ module VCAP::Services::ServiceBrokers::V2
       validate_bool!(:bindable, bindable) if bindable
       validate_bool!(:plan_updateable, plan_updateable) if plan_updateable
       validate_integer!(:maximum_polling_duration, maximum_polling_duration) if maximum_polling_duration
-      # TODO: proper validation of maintenance_info
-      # validate_hash!(:maintenance_info, @maintenance_info) if @maintenance_info
       validate_hash!(:schemas, @schemas_data) if @schemas_data
 
       validate_maintenance_info!
@@ -62,8 +60,19 @@ module VCAP::Services::ServiceBrokers::V2
       return if @maintenance_info.nil?
 
       validate_hash!(:maintenance_info, @maintenance_info)
-      # validate_string!(:maintenance_info_version, @maintenance_info['version'], required: true)
       validate_semver!(:maintenance_info_version, @maintenance_info['version'], required: true)
+      validate_maintenance_info_keys!
+      validate_length_as_json!(:maintenance_info, @maintenance_info, 100)
+    end
+
+    def validate_maintenance_info_keys!
+      if @maintenance_info.is_a? Hash
+        @maintenance_info.keys.each do |key|
+          if key != 'version'
+            errors.add(%(#{human_readable_attr_name(:maintenance_info)} contains invalid key "#{key}"))
+          end
+        end
+      end
     end
 
     def validate_schemas!
