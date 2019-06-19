@@ -5,12 +5,6 @@
 
 # Welcome to the Cloud Controller
 
-## Helpful Resources
-
-* [V3 API Docs](http://v3-apidocs.cloudfoundry.org)
-* [V2 API Docs](http://apidocs.cloudfoundry.org)
-* [Continuous Integration Pipelines](https://capi.ci.cf-app.com)
-
 ## Components
 
 ### Cloud Controller
