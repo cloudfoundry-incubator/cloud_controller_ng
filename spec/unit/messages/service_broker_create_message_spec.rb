@@ -116,6 +116,43 @@ module VCAP::CloudController
           end
         end
       end
+
+      context 'space guid relationship' do
+        context 'when space guid relationship is correct' do
+          let(:request_body) do
+            valid_body.merge(relationships: { space: { data: { guid: 'space-guid-here' } } })
+          end
+
+          it 'is valid' do
+            message = ServiceBrokerCreateMessage.new(request_body)
+            expect(message).to be_valid
+          end
+        end
+
+        context 'when relationships is not a hash' do
+          let(:request_body) do
+            valid_body.merge(relationships: 42)
+          end
+
+          it 'is not valid' do
+            message = ServiceBrokerCreateMessage.new(request_body)
+            expect(message).not_to be_valid
+            expect(message.errors_on(:relationships)).to include('must be a hash')
+          end
+        end
+
+        context 'when relationships is present but empty' do
+          let(:request_body) do
+            valid_body.merge(relationships: {})
+          end
+
+          it 'is not valid' do
+            message = ServiceBrokerCreateMessage.new(request_body)
+            expect(message).not_to be_valid
+            expect(message.errors_on(:relationships)).to include('relationships must contain relationships.space')
+          end
+        end
+      end
     end
   end
 end
