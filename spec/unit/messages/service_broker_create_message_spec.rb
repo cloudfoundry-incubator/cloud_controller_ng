@@ -2,9 +2,12 @@ require 'lightweight_spec_helper'
 require 'active_model'
 require 'rspec/collection_matchers'
 require 'messages/service_broker_create_message'
+require 'support/shared_examples/messages/message_nested_validations'
 
 module VCAP::CloudController
   RSpec.describe ServiceBrokerCreateMessage do
+    subject { ServiceBrokerCreateMessage }
+
     describe 'validations' do
       let(:valid_body) do
         {
@@ -118,40 +121,72 @@ module VCAP::CloudController
       end
 
       context 'space guid relationship' do
-        context 'when space guid relationship is correct' do
-          let(:request_body) do
-            valid_body.merge(relationships: { space: { data: { guid: 'space-guid-here' } } })
-          end
-
-          it 'is valid' do
-            message = ServiceBrokerCreateMessage.new(request_body)
-            expect(message).to be_valid
-          end
+        it_behaves_like 'invalid nested message type', :relationships, type: :hash do
+          let(:request_body) { valid_body.merge(relationships: 42) }
         end
 
-        context 'when relationships is not a hash' do
-          let(:request_body) do
-            valid_body.merge(relationships: 42)
-          end
-
-          it 'is not valid' do
-            message = ServiceBrokerCreateMessage.new(request_body)
-            expect(message).not_to be_valid
-            expect(message.errors_on(:relationships)).to include('must be a hash')
-          end
+        it_behaves_like 'invalid nested message extra', :relationships, extra: [:oopsie, :other], allowed: [:space] do
+          let(:request_body) { valid_body.merge(relationships: { oopsie: 'not valid', other: 'invalid' }) }
         end
 
-        context 'when relationships is present but empty' do
-          let(:request_body) do
-            valid_body.merge(relationships: {})
-          end
-
-          it 'is not valid' do
-            message = ServiceBrokerCreateMessage.new(request_body)
-            expect(message).not_to be_valid
-            expect(message.errors_on(:relationships)).to include('relationships must contain relationships.space')
-          end
+        it_behaves_like 'invalid nested message type', :relationships, :space, type: :hash do
+          let(:request_body) { valid_body.merge(relationships: { space: 42 }) }
         end
+
+        it_behaves_like 'invalid nested message extra', :relationships, :space, extra: [:oopsie, :other], allowed: [:data] do
+          let(:request_body) { valid_body.merge(relationships: { space: { oopsie: 'not valid', other: 'invalid' } }) }
+        end
+
+        it_behaves_like 'invalid nested message type', :relationships, :space, :data, type: :hash do
+          let(:request_body) { valid_body.merge(relationships: { space: { data: 42 } }) }
+        end
+
+        it_behaves_like 'invalid nested message extra', :relationships, :space, :data, extra: [:oopsie, :other], allowed: [:guid] do
+          let(:request_body) { valid_body.merge(relationships: { space: { data: { oopsie: 'not valid', other: 'invalid' } } }) }
+        end
+
+        it_behaves_like 'invalid nested message type', :relationships, :space, :data, :guid, type: :string do
+          let(:request_body) { valid_body.merge(relationships: { space: { data: { guid: 42 } } }) }
+        end
+
+        it_behaves_like 'valid nested message', :relationships do
+          let(:request_body) { valid_body.merge(relationships: { space: { data: { guid: 'space-guid-here' } } }) }
+        end
+
+        # context 'when space guid relationship is correct' do
+        #   let(:request_body) do
+        #     valid_body.merge(relationships: { space: { data: { guid: 'space-guid-here' } } })
+        #   end
+        #
+        #   it 'is valid' do
+        #     message = ServiceBrokerCreateMessage.new(request_body)
+        #     expect(message).to be_valid
+        #   end
+        # end
+        #
+        # context 'when relationships is not a hash' do
+        #   let(:request_body) do
+        #     valid_body.merge(relationships: 42)
+        #   end
+        #
+        #   it 'is not valid' do
+        #     message = ServiceBrokerCreateMessage.new(request_body)
+        #     expect(message).not_to be_valid
+        #     expect(message.errors_on(:relationships)).to include('must be a hash')
+        #   end
+        # end
+        #
+        # context 'when relationships is present but empty' do
+        #   let(:request_body) do
+        #     valid_body.merge(relationships: {})
+        #   end
+        #
+        #   it 'is not valid' do
+        #     message = ServiceBrokerCreateMessage.new(request_body)
+        #     expect(message).not_to be_valid
+        #     expect(message.errors_on(:relationships)).to include('relationships must contain relationships.space')
+        #   end
+        # end
       end
     end
   end

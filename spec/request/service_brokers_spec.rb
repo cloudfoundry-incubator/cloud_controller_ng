@@ -499,10 +499,6 @@ RSpec.describe 'V3 service brokers' do
     let(:user) { VCAP::CloudController::User.make }
     let(:org) { VCAP::CloudController::Organization.make }
     let(:space) { VCAP::CloudController::Space.make(organization: org) }
-    let!(:object) { VCAP::CloudController::ServiceBroker.make }
-
-    let!(:broker_with_space) { VCAP::CloudController::ServiceBroker.make space: space }
-    let!(:broker_non_spaced) { VCAP::CloudController::ServiceBroker.make }
 
     before(:each) do
       set_current_user(user)
@@ -511,6 +507,9 @@ RSpec.describe 'V3 service brokers' do
     end
 
     describe 'getting a single service broker' do
+      let!(:broker_with_space) { VCAP::CloudController::ServiceBroker.make space: space }
+      let!(:broker_non_spaced) { VCAP::CloudController::ServiceBroker.make }
+
       let(:parsed_body) {
         JSON.parse(last_response.body)
       }
@@ -545,6 +544,9 @@ RSpec.describe 'V3 service brokers' do
     end
 
     describe 'getting a list of service brokers' do
+      let!(:broker_with_space) { VCAP::CloudController::ServiceBroker.make space: space }
+      let!(:broker_non_spaced) { VCAP::CloudController::ServiceBroker.make }
+
       it 'only returns brokers visible to the user' do
         get('/v3/service_brokers', {}, headers_for(user))
 
@@ -561,6 +563,7 @@ RSpec.describe 'V3 service brokers' do
         response = post('/v3/service_brokers', request_body.to_json, headers_for(user))
 
         expect(response).to have_status_code(403)
+        expect(VCAP::CloudController::ServiceBroker.count).to eq(0)
       end
     end
 
@@ -574,7 +577,7 @@ RSpec.describe 'V3 service brokers' do
             data: {
               username: 'admin',
               password: 'welcome',
-            }
+            },
           },
           relationships: {
             space: {
@@ -587,7 +590,7 @@ RSpec.describe 'V3 service brokers' do
       end
 
       subject do
-        post('/v3/service_brokers', request_body.to_json, admin_headers)
+        post('/v3/service_brokers', request_body.to_json, headers_for(user))
       end
 
       before do

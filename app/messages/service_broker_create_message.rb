@@ -1,8 +1,11 @@
 require 'messages/base_message'
 require 'utils/hash_utils'
+require 'messages/message_nested_validations'
 
 module VCAP::CloudController
   class ServiceBrokerCreateMessage < BaseMessage
+    extend MessageNestedValidations
+
     register_allowed_keys [:name, :url, :credentials, :relationships]
     ALLOWED_CREDENTIAL_TYPES = ['basic'].freeze
 
@@ -10,13 +13,32 @@ module VCAP::CloudController
 
     validates :name, string: true
     validates :url, string: true
+
     validates :credentials, hash: true
-    validates :relationships, hash: true, allow_nil: true
     validates_inclusion_of :credentials_type, in: ALLOWED_CREDENTIAL_TYPES,
       message: "credentials.type must be one of #{ALLOWED_CREDENTIAL_TYPES}"
-
     validate :validate_credentials_data
-    validate :validate_space_guid
+
+    # validates :relationships, hash: true, allow_nil: true
+    # validate :validate_space_guid
+
+    validates_nested :relationships, :space, :data, :guid, string: true
+
+    # validates_nested :relationships do
+    #   validates_nested :space, allow_nil: true do
+    #     validates_nested :data do
+    #       validates_nested :guid, string: true
+    #       validates_nested :other_guid, string: true
+    #     end
+    #   end
+    #
+    #   validates_nested :org do
+    #     validates_nested :data do
+    #       validates_nested :guid, string: true
+    #       validates_nested :other_guid, string: true
+    #     end
+    #   end
+    # end
 
     def credentials_type
       HashUtils.dig(credentials, :type)
@@ -35,13 +57,13 @@ module VCAP::CloudController
       end
     end
 
-    def validate_space_guid
-      if relationships.is_a?(Hash)
-        unless relationships&.dig(:space).is_a?(Hash)
-          errors.add(:relationships, 'relationships must contain relationships.space')
-        end
-      end
-    end
+    # def validate_space_guid
+    #   if relationships.is_a?(Hash)
+    #     unless relationships&.dig(:space).is_a?(Hash)
+    #       errors.add(:relationships, 'relationships must contain relationships.space')
+    #     end
+    #   end
+    # end
 
     class BasicCredentialsMessage < BaseMessage
       register_allowed_keys [:username, :password]
