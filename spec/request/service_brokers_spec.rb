@@ -582,7 +582,7 @@ RSpec.describe 'V3 service brokers' do
           relationships: {
             space: {
               data: {
-                guid: 'fake-space-guid',
+                guid: space.guid
               },
             },
           },

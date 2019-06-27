@@ -38,7 +38,7 @@ class ServiceBrokersController < ApplicationController
   def create
     message = ServiceBrokerCreateMessage.new(hashed_params[:body])
     unprocessable!(message.errors.full_messages) unless message.valid?
-    unauthorized! unless permission_queryer.can_write_service_broker?
+    unauthorized! unless permission_queryer.can_write_service_broker?(message.space_guid)
 
     service_event_repository = VCAP::CloudController::Repositories::ServiceEventRepository::WithBrokerActor.new
     service_manager = VCAP::Services::ServiceBrokers::ServiceManager.new(service_event_repository)

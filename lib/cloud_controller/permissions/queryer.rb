@@ -208,8 +208,16 @@ class VCAP::CloudController::Permissions::Queryer
       can_read_secrets_in_space?(service_broker.space_guid, service_broker.space.organization_guid)
   end
 
-  def can_write_service_broker?
+  def can_write_global_service_broker?
     can_write_globally?
+  end
+
+  def can_write_spaced_scoped_broker?(space_guid)
+    can_write_to_space?(space_guid)
+  end
+
+  def can_write_service_broker?(space_guid)
+    space_guid ? can_write_spaced_scoped_broker?(space_guid) : can_write_globally?
   end
 
   def readable_route_mapping_guids

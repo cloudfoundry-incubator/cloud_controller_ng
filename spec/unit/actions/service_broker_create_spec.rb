@@ -7,9 +7,10 @@ module VCAP::CloudController
     let(:service_manager) { double }
     let(:registration) { instance_double(VCAP::Services::ServiceBrokers::ServiceBrokerRegistration) }
     let(:warnings) { [] }
+    let(:space_guid) { nil }
 
     let(:message) do
-      ServiceBrokerCreateMessage.new(
+      params = {
         name: 'broker name',
         url: 'http://example.org/broker-url',
         credentials: {
@@ -19,7 +20,13 @@ module VCAP::CloudController
             password: 'broker password',
           }
         }
-      )
+      }
+
+      if space_guid
+        params[:relationships] = { space: { data: space_guid } }
+      end
+
+      ServiceBrokerCreateMessage.new(params)
     end
 
     let(:result) { V3::ServiceBrokerCreate.new(service_event_repository, service_manager).create(message) }
@@ -40,8 +47,6 @@ module VCAP::CloudController
       end
 
       it 'delegates to ServiceBrokerRegistration with correct params' do
-        result
-
         expect(VCAP::Services::ServiceBrokers::ServiceBrokerRegistration).to have_received(:new) do |broker, manager, repo, route_services_enabled, volume_services_enabled|
           expect(broker.broker_url).to eq(message.url)
           expect(broker.name).to eq(message.name)
@@ -69,6 +74,29 @@ module VCAP::CloudController
           expect(volume_services_enabled).to be_falsey
         end
         expect(registration).to have_received(:create)
+      end
+    end
+
+    context 'when the broker is space scoped' do
+      context 'and the space does not exist' do
+        let(:space_guid) { 'space-guid-that-does-not-exit' }
+
+        it 'raises' do
+          expect { result }.to raise_error('foo')
+        end
+      end
+
+      context 'and the space exists' do
+        before do
+          result
+        end
+
+        it 'delegates to ServiceBrokerRegistration with correct params' do
+          expect(VCAP::Services::ServiceBrokers::ServiceBrokerRegistration).to have_received(:new) do |broker, _, _, _, _, _|
+            expect(broker.space_guid).to eq('fake-space-guid')
+          end
+          expect(registration).to have_received(:create)
+        end
       end
     end
 
