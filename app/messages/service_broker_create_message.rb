@@ -1,15 +1,17 @@
 require 'messages/base_message'
 require 'utils/hash_utils'
-require 'messages/message_nested_validations'
 
 module VCAP::CloudController
   class ServiceBrokerCreateMessage < BaseMessage
-    extend MessageNestedValidations
-
     register_allowed_keys [:name, :url, :credentials, :relationships]
     ALLOWED_CREDENTIAL_TYPES = ['basic'].freeze
 
+    def self.relationships_requested?
+      @relationships_requested ||= proc { |a| a.requested?(:relationships) }
+    end
+
     validates_with NoAdditionalKeysValidator
+    validates_with RelationshipValidator, if: relationships_requested?
 
     validates :name, string: true
     validates :url, string: true
@@ -19,33 +21,16 @@ module VCAP::CloudController
       message: "credentials.type must be one of #{ALLOWED_CREDENTIAL_TYPES}"
     validate :validate_credentials_data
 
-    # validates :relationships, hash: true, allow_nil: true
-    # validate :validate_space_guid
-
-    validates_nested :relationships, :space, :data, :guid, string: true
-
-    # validates_nested :relationships do
-    #   validates_nested :space, allow_nil: true do
-    #     validates_nested :data do
-    #       validates_nested :guid, string: true
-    #       validates_nested :other_guid, string: true
-    #     end
-    #   end
-    #
-    #   validates_nested :org do
-    #     validates_nested :data do
-    #       validates_nested :guid, string: true
-    #       validates_nested :other_guid, string: true
-    #     end
-    #   end
-    # end
-
-    def credentials_type
-      HashUtils.dig(credentials, :type)
+    def relationships_message
+      @relationships_message ||= Relationships.new(relationships&.deep_symbolize_keys)
     end
 
     def credentials_data
       @credentials_data ||= BasicCredentialsMessage.new(HashUtils.dig(credentials, :data))
+    end
+
+    def credentials_type
+      HashUtils.dig(credentials, :type)
     end
 
     def validate_credentials_data
@@ -57,13 +42,7 @@ module VCAP::CloudController
       end
     end
 
-    # def validate_space_guid
-    #   if relationships.is_a?(Hash)
-    #     unless relationships&.dig(:space).is_a?(Hash)
-    #       errors.add(:relationships, 'relationships must contain relationships.space')
-    #     end
-    #   end
-    # end
+    delegate :space_guid, to: :relationships_message
 
     class BasicCredentialsMessage < BaseMessage
       register_allowed_keys [:username, :password]
@@ -72,6 +51,18 @@ module VCAP::CloudController
 
       validates :username, string: true
       validates :password, string: true
+    end
+
+    class Relationships < BaseMessage
+      register_allowed_keys [:space]
+
+      validates_with NoAdditionalKeysValidator
+
+      validates :space, presence: true, allow_nil: false, to_one_relationship: true
+
+      def space_guid
+        HashUtils.dig(space, :data, :guid)
+      end
     end
   end
 end

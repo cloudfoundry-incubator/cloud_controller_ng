@@ -2,7 +2,6 @@ require 'lightweight_spec_helper'
 require 'active_model'
 require 'rspec/collection_matchers'
 require 'messages/service_broker_create_message'
-require 'support/shared_examples/messages/message_nested_validations'
 
 module VCAP::CloudController
   RSpec.describe ServiceBrokerCreateMessage do
@@ -121,72 +120,82 @@ module VCAP::CloudController
       end
 
       context 'space guid relationship' do
-        it_behaves_like 'invalid nested message type', :relationships, type: :hash do
-          let(:request_body) { valid_body.merge(relationships: 42) }
-        end
+        subject { ServiceBrokerCreateMessage.new(request_body) }
 
-        it_behaves_like 'invalid nested message extra', :relationships, extra: [:oopsie, :other], allowed: [:space] do
-          let(:request_body) { valid_body.merge(relationships: { oopsie: 'not valid', other: 'invalid' }) }
-        end
-
-        it_behaves_like 'invalid nested message type', :relationships, :space, type: :hash do
-          let(:request_body) { valid_body.merge(relationships: { space: 42 }) }
-        end
-
-        it_behaves_like 'invalid nested message extra', :relationships, :space, extra: [:oopsie, :other], allowed: [:data] do
-          let(:request_body) { valid_body.merge(relationships: { space: { oopsie: 'not valid', other: 'invalid' } }) }
-        end
-
-        it_behaves_like 'invalid nested message type', :relationships, :space, :data, type: :hash do
-          let(:request_body) { valid_body.merge(relationships: { space: { data: 42 } }) }
-        end
-
-        it_behaves_like 'invalid nested message extra', :relationships, :space, :data, extra: [:oopsie, :other], allowed: [:guid] do
-          let(:request_body) { valid_body.merge(relationships: { space: { data: { oopsie: 'not valid', other: 'invalid' } } }) }
-        end
-
-        it_behaves_like 'invalid nested message type', :relationships, :space, :data, :guid, type: :string do
-          let(:request_body) { valid_body.merge(relationships: { space: { data: { guid: 42 } } }) }
-        end
-
-        it_behaves_like 'valid nested message', :relationships do
+        context 'when replationships is structured properly' do
           let(:request_body) { valid_body.merge(relationships: { space: { data: { guid: 'space-guid-here' } } }) }
+
+          it 'is valid' do
+            expect(subject).to be_valid
+            expect(subject.space_guid).to eq('space-guid-here')
+          end
         end
 
-        # context 'when space guid relationship is correct' do
-        #   let(:request_body) do
-        #     valid_body.merge(relationships: { space: { data: { guid: 'space-guid-here' } } })
-        #   end
-        #
-        #   it 'is valid' do
-        #     message = ServiceBrokerCreateMessage.new(request_body)
-        #     expect(message).to be_valid
-        #   end
-        # end
-        #
-        # context 'when relationships is not a hash' do
-        #   let(:request_body) do
-        #     valid_body.merge(relationships: 42)
-        #   end
-        #
-        #   it 'is not valid' do
-        #     message = ServiceBrokerCreateMessage.new(request_body)
-        #     expect(message).not_to be_valid
-        #     expect(message.errors_on(:relationships)).to include('must be a hash')
-        #   end
-        # end
-        #
-        # context 'when relationships is present but empty' do
-        #   let(:request_body) do
-        #     valid_body.merge(relationships: {})
-        #   end
-        #
-        #   it 'is not valid' do
-        #     message = ServiceBrokerCreateMessage.new(request_body)
-        #     expect(message).not_to be_valid
-        #     expect(message.errors_on(:relationships)).to include('relationships must contain relationships.space')
-        #   end
-        # end
+        context 'when relationships is not a hash' do
+          let(:request_body) { valid_body.merge(relationships: 42) }
+
+          it 'is not valid' do
+            expect(subject).not_to be_valid
+            expect(subject.errors_on(:relationships)).to include("'relationships' is not a hash")
+          end
+        end
+
+        context 'when relationships does not have a valid structure' do
+          let(:request_body) { valid_body.merge(relationships: { oopsie: 'not valid', other: 'invalid' }) }
+
+          it 'is not valid' do
+            expect(subject).not_to be_valid
+            expect(subject.errors_on(:relationships)).to include("Unknown field(s): 'oopsie', 'other'")
+            expect(subject.errors_on(:relationships)).to include("Space can't be blank")
+            expect(subject.errors_on(:relationships)).to include('Space must be structured like this: "space: {"data": {"guid": "valid-guid"}}"')
+          end
+        end
+
+        context 'when replationships.space is not a hash' do
+          let(:request_body) { valid_body.merge(relationships: { space: 42 }) }
+
+          it 'is not valid' do
+            expect(subject).not_to be_valid
+            expect(subject.errors_on(:relationships)).to include('Space must be structured like this: "space: {"data": {"guid": "valid-guid"}}"')
+          end
+        end
+
+        context 'when relationships.space does not have a valid structure' do
+          let(:request_body) { valid_body.merge(relationships: { space: { oopsie: 'not valid', other: 'invalid' } }) }
+
+          it 'is not valid' do
+            expect(subject).not_to be_valid
+            expect(subject.errors_on(:relationships)).to include('Space must be structured like this: "space: {"data": {"guid": "valid-guid"}}"')
+          end
+        end
+
+        context 'when replationships.space.data is not a hash' do
+          let(:request_body) { valid_body.merge(relationships: { space: { data: 42 } }) }
+
+          it 'is not valid' do
+            expect(subject).not_to be_valid
+            expect(subject.errors_on(:relationships)).to include('Space must be structured like this: "space: {"data": {"guid": "valid-guid"}}"')
+          end
+        end
+
+        context 'when relationships.space.data does not have a valid structure' do
+          let(:request_body) { valid_body.merge(relationships: { space: { data: { oopsie: 'not valid', other: 'invalid' } } }) }
+
+          it 'is not valid' do
+            expect(subject).not_to be_valid
+            expect(subject.errors_on(:relationships)).to include('Space must be structured like this: "space: {"data": {"guid": "valid-guid"}}"')
+          end
+        end
+
+        context 'when replationships.space.data.guid is not a string' do
+          let(:request_body) { valid_body.merge(relationships: { space: { data: { guid: 42 } } }) }
+
+          it 'is not valid' do
+            expect(subject).not_to be_valid
+            expect(subject.errors_on(:relationships)).to include('Space guid must be a string')
+            expect(subject.errors_on(:relationships)).to include('Space guid must be between 1 and 200 characters')
+          end
+        end
       end
     end
   end
