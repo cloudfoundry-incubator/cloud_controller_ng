@@ -17,7 +17,7 @@ module VCAP::CloudController
         }
 
         if message.space_guid
-          params[:space_id] = get_space_id_from_guid(message.space_guid)
+          params[:space_id] = Space.first(guid: message.space_guid).id
         end
 
         broker = VCAP::CloudController::ServiceBroker.new(params)
@@ -47,13 +47,6 @@ module VCAP::CloudController
 
       def volume_services_enabled?
         VCAP::CloudController::Config.config.get(:volume_services_enabled)
-      end
-
-      def get_space_id_from_guid(space_guid)
-        space = Space.first(guid: space_guid)
-        raise ServiceBrokerCreate::SpaceNotFound unless space
-
-        space.id
       end
     end
   end

@@ -23,7 +23,7 @@ module VCAP::CloudController
       }
 
       if space_guid
-        params[:relationships] = { space: { data: space_guid } }
+        params[:relationships] = { space: { data: { guid: space_guid } } }
       end
 
       ServiceBrokerCreateMessage.new(params)
@@ -78,25 +78,18 @@ module VCAP::CloudController
     end
 
     context 'when the broker is space scoped' do
-      context 'and the space does not exist' do
-        let(:space_guid) { 'space-guid-that-does-not-exit' }
+      let(:space) { VCAP::CloudController::Space.make }
+      let(:space_guid) { space.guid }
 
-        it 'raises' do
-          expect { result }.to raise_error('foo')
-        end
+      before do
+        result
       end
 
-      context 'and the space exists' do
-        before do
-          result
+      it 'delegates to ServiceBrokerRegistration with correct params' do
+        expect(VCAP::Services::ServiceBrokers::ServiceBrokerRegistration).to have_received(:new) do |broker, _, _, _, _, _|
+          expect(broker.space_guid).to eq(space.guid)
         end
-
-        it 'delegates to ServiceBrokerRegistration with correct params' do
-          expect(VCAP::Services::ServiceBrokers::ServiceBrokerRegistration).to have_received(:new) do |broker, _, _, _, _, _|
-            expect(broker.space_guid).to eq('fake-space-guid')
-          end
-          expect(registration).to have_received(:create)
-        end
+        expect(registration).to have_received(:create)
       end
     end
 

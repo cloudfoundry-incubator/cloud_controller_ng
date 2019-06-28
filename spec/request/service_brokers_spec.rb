@@ -18,7 +18,6 @@ RSpec.describe 'V3 service brokers' do
             }
           ]
         },
-
         {
           'id' => 'service_id-2',
           'name' => 'route_volume_service_name-2',
@@ -570,7 +569,7 @@ RSpec.describe 'V3 service brokers' do
     describe 'registering a space scoped service broker' do
       let(:request_body) do
         {
-          name: 'broker name',
+          name: 'space-scoped broker name',
           url: 'http://example.org/broker-url',
           credentials: {
             type: 'basic',
@@ -608,10 +607,10 @@ RSpec.describe 'V3 service brokers' do
 
         service_broker = VCAP::CloudController::ServiceBroker.last
         expect(service_broker).to include(
-          'name' => 'broker name',
+          'name' => 'space-scoped broker name',
           'broker_url' => 'http://example.org/broker-url',
           'auth_username' => 'admin',
-          'space_guid' => 'fake-space-guid',
+          'space_guid' => space.guid,
         )
         expect(service_broker.auth_password).to eq('welcome') # password not exported in to_hash
       end
@@ -631,10 +630,10 @@ RSpec.describe 'V3 service brokers' do
       it 'reports service events' do
         events = VCAP::CloudController::Event.all
         expect(events).to have(4).items
-        expect(events[0]).to include('type' => 'audit.service.create', 'actor_name' => 'broker name')
-        expect(events[1]).to include('type' => 'audit.service.create', 'actor_name' => 'broker name')
-        expect(events[2]).to include('type' => 'audit.service_plan.create', 'actor_name' => 'broker name')
-        expect(events[3]).to include('type' => 'audit.service_plan.create', 'actor_name' => 'broker name')
+        expect(events[0]).to include('type' => 'audit.service.create', 'actor_name' => 'space-scoped broker name')
+        expect(events[1]).to include('type' => 'audit.service.create', 'actor_name' => 'space-scoped broker name')
+        expect(events[2]).to include('type' => 'audit.service_plan.create', 'actor_name' => 'space-scoped broker name')
+        expect(events[3]).to include('type' => 'audit.service_plan.create', 'actor_name' => 'space-scoped broker name')
       end
     end
   end
@@ -692,6 +691,35 @@ RSpec.describe 'V3 service brokers' do
     end
 
     describe 'registering a global service broker' do
+      it 'fails authorization' do
+        response = post('/v3/service_brokers', request_body.to_json, headers_for(user))
+
+        expect(response).to have_status_code(403)
+      end
+    end
+
+    describe 'registering a space scoped service broker' do
+      let(:request_body) do
+        {
+          name: 'space-scoped broker name',
+          url: 'http://example.org/broker-url',
+          credentials: {
+            type: 'basic',
+            data: {
+              username: 'admin',
+              password: 'welcome',
+            },
+          },
+          relationships: {
+            space: {
+              data: {
+                guid: space.guid
+              },
+            },
+          },
+        }
+      end
+
       it 'fails authorization' do
         response = post('/v3/service_brokers', request_body.to_json, headers_for(user))
 
