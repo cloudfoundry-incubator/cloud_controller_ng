@@ -5,7 +5,6 @@ module VCAP
   module CloudController
     RSpec.describe 'ServiceBrokerCreate' do
       let(:dummy) { double('dummy').as_null_object }
-      let(:stepper) { Stepper.new }
       subject(:action) { V3::ServiceBrokerCreate.new(dummy, dummy) }
 
       let(:name) { "broker-name-#{Sham.sequence_id}" }
@@ -69,6 +68,23 @@ module VCAP
       end
 
       describe 'concurrent behaviour' do
+        let(:stepper) { Stepper.new }
+
+        before do
+          allow(ServiceBroker).to receive(:create).and_wrap_original do |m, params|
+            stepper.step 'start create broker transaction'
+            result = m.call(params)
+            stepper.step 'finish create broker and start create broker state'
+            result
+          end
+
+          allow(ServiceBrokerState).to receive(:create).and_wrap_original do |m, params|
+            result = m.call(params)
+            stepper.step 'finish create broker transaction'
+            result
+          end
+        end
+
         def interleave_randomly(xs, ys)
           result = []
           while !xs.empty? && !ys.empty?
@@ -118,8 +134,6 @@ module VCAP
             puts stepper.expected_order
             puts '===='
             puts
-
-            expect(ServiceBroker.count).to eq(0)
 
             t1 = Thread.start do
               subject.create(message)

@@ -9,10 +9,9 @@ module VCAP::CloudController
       class SpaceNotFound < StandardError
       end
 
-      def initialize(service_event_repository, service_manager, stepper=nil)
+      def initialize(service_event_repository, service_manager)
         @service_event_repository = service_event_repository
         @service_manager = service_manager
-        @stepper = stepper
       end
 
       def create(message)
@@ -46,7 +45,7 @@ module VCAP::CloudController
 
       private
 
-      attr_reader :service_event_repository, :service_manager, :stepper
+      attr_reader :service_event_repository, :service_manager
 
       def route_services_enabled?
         VCAP::CloudController::Config.config.get(:route_services_enabled)
