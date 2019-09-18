@@ -53,7 +53,7 @@ module VCAP::CloudController
           raise fail_with_incompatible_catalog(catalog.incompatibility_errors) unless catalog.compatible?
 
           unless client_manager.synchronize_clients_with_catalog(catalog)
-            # TODO: raise some humanized exceptions if it failed
+            fail_with_invalid_catalog(client_manager.errors)
           end
 
           service_manager.sync_services_and_plans(catalog)
