@@ -80,6 +80,29 @@ module VCAP
                 )
               end
             end
+
+            context 'when catalog returned by broker causes UAA sync conflicts' do
+              before do
+                uaa_conflicting_catalog
+
+                VCAP::CloudController::ServiceDashboardClient.make(
+                  uaa_id: 'some-uaa-id'
+                )
+              end
+
+              it 'errors when there are uaa synchronization errors' do
+                begin
+                  job.perform
+                  fail('expected error to be raised')
+                rescue ::CloudController::Errors::ApiError => e
+                  expect(e.message).to include(
+                    'Service broker catalog is invalid',
+                    'Service service_name',
+                    'Service dashboard client id must be unique'
+                  )
+                end
+              end
+            end
           end
 
           context 'service broker created by legacy code that lacks any state' do
@@ -117,6 +140,12 @@ module VCAP
 
           allow(catalog).to receive(:valid?).and_return(false)
           allow(catalog).to receive(:validation_errors).and_return(validation_errors)
+        end
+
+        def uaa_conflicting_catalog
+          allow(Services::ServiceClientProvider).to receive(:provide).
+            with(broker: broker).
+            and_return(FakeServiceBrokerV2Client::WithConflictingUAAClient.new)
         end
 
         def incompatible_catalog

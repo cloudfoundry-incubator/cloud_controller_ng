@@ -629,6 +629,50 @@ RSpec.describe 'V3 service brokers' do
         end
       end
 
+      context 'when synchronizing UAA clients fails' do
+        before do
+          VCAP::CloudController::ServiceDashboardClient.make(
+            uaa_id: dashboard_client['id']
+          )
+
+          create_broker_successfully(global_broker_request_body, with: admin_headers)
+
+          execute_all_jobs(expected_successes: 0, expected_failures: 1)
+        end
+
+        let(:job) { VCAP::CloudController::PollableJobModel.last }
+
+        it 'leaves broker in a non-available failed state' do
+          expect_broker_status(
+            available: false,
+            status: 'synchronization failed',
+            with: admin_headers
+          )
+        end
+
+        it 'has failed the job with an appropriate error' do
+          get "/v3/jobs/#{job.guid}", {}, admin_headers
+          expect(parsed_body).to include(
+            'state' => 'FAILED',
+            'operation' => 'service_broker.catalog.synchronize',
+            'errors' => [
+              include(
+                'code' => 270012,
+                'detail' => "Service broker catalog is invalid: \nService service_name-1\n  Service dashboard client id must be unique\n"
+              )
+            ],
+            'links' => {
+              'self' => {
+                'href' => match(%r(http.+/v3/jobs/#{job.guid}))
+              },
+              'service_brokers' => {
+                'href' => match(%r(http.+/v3/service_brokers/[^/]+))
+              }
+            }
+          )
+        end
+      end
+
       context 'when user provides a malformed request' do
         let(:malformed_body) do
           {
