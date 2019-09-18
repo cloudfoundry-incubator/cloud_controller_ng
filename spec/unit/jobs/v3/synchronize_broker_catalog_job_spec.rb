@@ -1,5 +1,5 @@
 require 'rails_helper'
-require 'jobs/v3/synchronize_broker_catalog_job'
+require 'jobs/v3/services/synchronize_broker_catalog_job'
 require 'cloud_controller/errors/api_error'
 
 module VCAP
