@@ -34,14 +34,15 @@ module VCAP::CloudController
       attr_reader :broker_guid
 
       class Perform
-        def initialize(broker_guid)
+        def initialize(broker_guid, service_manager_factory: VCAP::Services::ServiceBrokers::ServiceManager, warning_emitter: nil)
           @broker_guid = broker_guid
           @broker = ServiceBroker.find(guid: broker_guid)
           @formatter = VCAP::Services::ServiceBrokers::ValidationErrorsFormatter.new
           @service_event_repository = VCAP::CloudController::Repositories::ServiceEventRepository::WithBrokerActor.new
           @client_manager = VCAP::Services::SSO::DashboardClientManager.new(broker, service_event_repository)
           @broker_client = VCAP::Services::ServiceClientProvider.provide(broker: broker)
-          @service_manager = VCAP::Services::ServiceBrokers::ServiceManager.new(service_event_repository)
+          @service_manager = service_manager_factory.new(service_event_repository)
+          @warning_emitter = warning_emitter
         end
 
         def perform
@@ -59,6 +60,8 @@ module VCAP::CloudController
           service_manager.sync_services_and_plans(catalog)
 
           # TODO: if service_manager.has_warnings?
+          service_manager.warnings.each { |w| warning_emitter&.emit(w) }
+
           # TODO: if client_manager.has_warnings?
 
           available_state
@@ -71,7 +74,7 @@ module VCAP::CloudController
 
         attr_reader :broker_guid, :broker, :broker_client,
             :formatter, :client_manager, :service_event_repository,
-            :service_manager
+            :service_manager, :warning_emitter
 
         def ensure_state_present
           if broker.service_broker_state.nil?

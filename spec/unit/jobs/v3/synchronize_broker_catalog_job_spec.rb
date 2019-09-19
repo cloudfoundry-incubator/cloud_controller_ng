@@ -15,8 +15,16 @@ module VCAP
               auth_password: 'password'
             )
           end
+          let(:warning_emitter) { double('warning emitter').as_null_object }
+          let(:service_manager_factory) { Services::ServiceBrokers::ServiceManager }
 
-          subject(:job) { SynchronizeBrokerCatalogJob.new(broker.guid) }
+          subject(:job) do
+            SynchronizeBrokerCatalogJob::Perform.new(
+              broker.guid,
+              service_manager_factory: service_manager_factory,
+              warning_emitter: warning_emitter,
+            )
+          end
 
           let(:broker_client) { FakeServiceBrokerV2Client.new }
           let(:broker_state) { ServiceBrokerState.where(service_broker_id: broker.id).first.state }
@@ -48,6 +56,10 @@ module VCAP
               expect(service_plans.first.name).to eq(broker_client.plan_name)
 
               expect(broker_state).to eq(ServiceBrokerStateEnum::AVAILABLE)
+            end
+
+            it 'does not emit any warnings' do
+              expect(warning_emitter).not_to receive(:emit)
             end
 
             context 'when catalog returned by broker is invalid' do
@@ -120,6 +132,25 @@ module VCAP
 
                 expect(broker_state).to eq(ServiceBrokerStateEnum::SYNCHRONIZATION_FAILED)
               end
+            end
+          end
+
+          context 'when service manager returns a warning' do
+            let(:service_manager) { instance_double(Services::ServiceBrokers::ServiceManager, sync_services_and_plans: nil) }
+            let(:service_manager_factory) { class_double(Services::ServiceBrokers::ServiceManager, new: service_manager) }
+            let(:warning) { Services::ServiceBrokers::ServiceManager::DeactivatedPlansWarning.new }
+
+            before do
+              warning.add(ServicePlan.make)
+
+              allow(service_manager).to receive(:has_warnings?).and_return(true)
+              allow(service_manager).to receive(:warnings).and_return([warning])
+            end
+
+            it 'then the warning gets emitted' do
+              job.perform
+
+              expect(warning_emitter).to have_received(:emit).with(warning)
             end
           end
         end
