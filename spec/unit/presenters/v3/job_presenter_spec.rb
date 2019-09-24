@@ -5,13 +5,15 @@ module VCAP::CloudController::Presenters::V3
   RSpec.describe JobPresenter do
     shared_examples_for(JobPresenter) do
       let(:api_error) { nil }
+      let(:warnings) { nil }
       let(:job) do
         VCAP::CloudController::PollableJobModel.make(
           state: VCAP::CloudController::PollableJobModel::COMPLETE_STATE,
           operation: "#{resource_type}.my_async_operation",
           resource_type: resource_type,
           resource_guid: resource.guid,
-          cf_api_error: api_error
+          cf_api_error: api_error,
+          warnings: warnings
         )
       end
       let(:result) { JobPresenter.new(job).to_hash }
@@ -27,6 +29,7 @@ module VCAP::CloudController::Presenters::V3
           expect(result[:state]).to eq(VCAP::CloudController::PollableJobModel::COMPLETE_STATE)
           expect(result[:links]).to eq(links)
           expect(result[:errors]).to eq([])
+          expect(result[:warnings]).to eq([])
         end
 
         context 'when the job has not completed' do
@@ -73,8 +76,8 @@ module VCAP::CloudController::Presenters::V3
           let(:api_error) do
             YAML.dump({
               'errors' => [{
-                'title'       => 'CF-BlobstoreError',
-                'code'        => 150007,
+                'title' => 'CF-BlobstoreError',
+                'code' => 150007,
                 'description' => 'Failed to perform blobstore operation after three retries.'
               }]
             })
@@ -102,6 +105,22 @@ module VCAP::CloudController::Presenters::V3
                 description: 'Failed to perform blobstore operation after three retries.'
               }])
             end
+          end
+        end
+
+        context 'when the job has a warning' do
+          let(:warnings) do
+            [
+              { message: 'warning one' },
+              { message: 'warning two' }
+            ]
+          end
+
+          it 'presents the list of warnings' do
+            expect(result[:warnings]).to eq([
+              { message: 'warning one' },
+              { message: 'warning two' }
+            ])
           end
         end
       end
@@ -132,6 +151,13 @@ module VCAP::CloudController::Presenters::V3
       it_behaves_like JobPresenter do
         let(:resource_type) { 'package' }
         let(:resource) { VCAP::CloudController::PackageModel.make }
+      end
+    end
+
+    context 'for service brokers' do
+      it_behaves_like JobPresenter do
+        let(:resource_type) { 'service_broker' }
+        let(:resource) { VCAP::CloudController::ServiceBroker.make }
       end
     end
   end
