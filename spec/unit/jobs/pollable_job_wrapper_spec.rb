@@ -68,6 +68,41 @@ module VCAP::CloudController::Jobs
       end
     end
 
+    describe 'after hook' do
+      let(:expected_warnings) { [{ message: 'warning 1' }, { message: 'warning 2' }] }
+      let(:broker) {
+        VCAP::CloudController::ServiceBroker.create(
+          name: 'test-broker',
+          broker_url: 'http://example.org/broker-url',
+          auth_username: 'username',
+          auth_password: 'password'
+        )
+      }
+
+      let(:job) { VCAP::CloudController::V3::SynchronizeBrokerCatalogJob.new(broker.guid) }
+
+      before do
+        allow_any_instance_of(VCAP::CloudController::V3::SynchronizeBrokerCatalogJob).
+          to receive(:perform)
+
+        allow_any_instance_of(VCAP::CloudController::V3::SynchronizeBrokerCatalogJob).
+          to receive(:warnings).and_return(expected_warnings)
+      end
+
+      it 'records any warnings that were issued' do
+        enqueued_job = VCAP::CloudController::Jobs::Enqueuer.new(pollable_job).enqueue
+        VCAP::CloudController::PollableJobModel.make(delayed_job_guid: enqueued_job.guid, state: 'PROCESSING')
+
+        execute_all_jobs(expected_successes: 1, expected_failures: 0)
+
+        updated_job = VCAP::CloudController::PollableJobModel.where(delayed_job_guid: enqueued_job.guid).first
+
+        expect(updated_job.state).to eq('COMPLETE')
+        warnings = updated_job.warnings.to_json
+        expect(warnings).to include(expected_warnings[0][:message], expected_warnings[1][:message])
+      end
+    end
+
     context '#max_attempts' do
       it 'delegates to the handler' do
         expect(pollable_job.max_attempts).to eq(2)
