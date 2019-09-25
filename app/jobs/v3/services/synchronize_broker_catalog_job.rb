@@ -5,6 +5,8 @@ module VCAP::CloudController
         @broker_guid = broker_guid
       end
 
+      attr_reader :warnings
+
       def perform
         Perform.new(broker_guid).perform
       end

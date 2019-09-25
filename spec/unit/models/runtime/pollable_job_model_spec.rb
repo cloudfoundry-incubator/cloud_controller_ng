@@ -57,32 +57,15 @@ module VCAP::CloudController
       end
     end
 
-    describe 'validations' do
-      it 'validates warnings is an array' do
+    describe '#warnings' do
+      it 'returns the warnings for the job' do
         job = PollableJobModel.make
-        expect { job.update(warnings: 'something else') }.to raise_error(
-          /warnings is not a valid array or nilclass/
-        )
-      end
+        warnings = []
+        warnings << JobWarningModel.make(job: job, warning: 'something is wrong')
+        warnings << JobWarningModel.make(job: job, warning: 'something is really wrong')
 
-      it 'validates each warning item to be a hash with a message' do
-        job = PollableJobModel.make
-
-        expect do
-          job.update(warnings: [
-            'not hash',
-            { message: 'i am okay' },
-            { message: {} },
-            { 'message' => 'and me too' },
-            { 'but i am' => 'wrong' }
-          ])
-        end.to raise_error(
-          include(
-            %{warnings should contain only hashes with a :message key, but found '"not hash"'},
-            %{warnings[].message should be a string, but found '{}'},
-            %{warnings should contain only hashes with a :message key, but found '{"but i am"=>"wrong"}'}
-          )
-        )
+        expect(job.warnings.size).to eq(2)
+        expect(job.warnings).to include(*warnings)
       end
     end
   end
