@@ -182,7 +182,7 @@ module VCAP::CloudController
 
   JobWarningModel.blueprint do
     guid { Sham.guid }
-    warning { 'job warning' }
+    detail { 'job warning' }
   end
 
   User.blueprint do
