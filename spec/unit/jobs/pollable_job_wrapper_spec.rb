@@ -91,14 +91,13 @@ module VCAP::CloudController::Jobs
 
       it 'records any warnings that were issued' do
         enqueued_job = VCAP::CloudController::Jobs::Enqueuer.new(pollable_job).enqueue
-        VCAP::CloudController::PollableJobModel.make(delayed_job_guid: enqueued_job.guid, state: 'PROCESSING')
+        job_model = VCAP::CloudController::PollableJobModel.make(delayed_job_guid: enqueued_job.guid, state: 'PROCESSING')
 
         execute_all_jobs(expected_successes: 1, expected_failures: 0)
 
-        updated_job = VCAP::CloudController::PollableJobModel.where(delayed_job_guid: enqueued_job.guid).first
-
-        expect(updated_job.state).to eq('COMPLETE')
-        warnings = updated_job.warnings.to_json
+        job_model.reload
+        expect(job_model.state).to eq('COMPLETE')
+        warnings = job_model.warnings.to_json
         expect(warnings).to include(expected_warnings[0][:message], expected_warnings[1][:message])
       end
     end
