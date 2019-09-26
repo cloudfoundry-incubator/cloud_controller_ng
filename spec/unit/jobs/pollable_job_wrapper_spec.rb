@@ -69,7 +69,7 @@ module VCAP::CloudController::Jobs
     end
 
     describe 'after hook' do
-      let(:expected_warnings) { [{ message: 'warning 1' }, { message: 'warning 2' }] }
+      let(:expected_warnings) { [{ detail: 'warning 1' }, { detail: 'warning 2' }] }
       let(:broker) {
         VCAP::CloudController::ServiceBroker.create(
           name: 'test-broker',
@@ -97,8 +97,8 @@ module VCAP::CloudController::Jobs
 
         job_model.reload
         expect(job_model.state).to eq('COMPLETE')
-        warnings = job_model.warnings.to_json
-        expect(warnings).to include(expected_warnings[0][:message], expected_warnings[1][:message])
+        warnings = job_model.warnings
+        expect(warnings.to_json).to include(expected_warnings[0][:detail],expected_warnings[1][:detail])
       end
     end
 

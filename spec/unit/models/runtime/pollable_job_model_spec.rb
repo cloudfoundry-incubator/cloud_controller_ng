@@ -61,8 +61,8 @@ module VCAP::CloudController
       it 'returns the warnings for the job' do
         job = PollableJobModel.make
         warnings = []
-        warnings << JobWarningModel.make(job: job, warning: 'something is wrong')
-        warnings << JobWarningModel.make(job: job, warning: 'something is really wrong')
+        warnings << JobWarningModel.make(job: job, detail: 'something is wrong')
+        warnings << JobWarningModel.make(job: job, detail: 'something is really wrong')
 
         expect(job.warnings.size).to eq(2)
         expect(job.warnings).to include(*warnings)
