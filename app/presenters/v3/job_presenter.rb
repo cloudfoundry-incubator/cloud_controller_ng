@@ -55,7 +55,7 @@ module VCAP::CloudController
         def build_warnings
           return [] if job.warnings.nil?
 
-          job.warnings
+          job.warnings.map { |w| { detail: w[:detail] } }
         end
       end
     end
