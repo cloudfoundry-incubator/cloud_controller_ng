@@ -45,7 +45,7 @@ module VCAP::CloudController
 
       def persist_warnings(job)
         if handler.respond_to?(:warnings)
-          handler.warnings.each do |warning|
+          handler.warnings&.each do |warning|
             find_pollable_job(job).each do |pollable_job|
               JobWarningModel.create(job: pollable_job, detail: warning[:detail])
             end

@@ -69,7 +69,6 @@ module VCAP::CloudController::Jobs
     end
 
     describe 'after hook' do
-      let(:expected_warnings) { [{ detail: 'warning 1' }, { detail: 'warning 2' }] }
       let(:broker) {
         VCAP::CloudController::ServiceBroker.create(
           name: 'test-broker',
@@ -89,16 +88,34 @@ module VCAP::CloudController::Jobs
           to receive(:warnings).and_return(expected_warnings)
       end
 
-      it 'records any warnings that were issued' do
-        enqueued_job = VCAP::CloudController::Jobs::Enqueuer.new(pollable_job).enqueue
-        job_model = VCAP::CloudController::PollableJobModel.make(delayed_job_guid: enqueued_job.guid, state: 'PROCESSING')
+      context 'when warnings were issued' do
+        let(:expected_warnings) { [{ detail: 'warning 1' }, { detail: 'warning 2' }] }
+        it 'records all warnings' do
+          enqueued_job = VCAP::CloudController::Jobs::Enqueuer.new(pollable_job).enqueue
+          job_model = VCAP::CloudController::PollableJobModel.make(delayed_job_guid: enqueued_job.guid, state: 'PROCESSING')
 
-        execute_all_jobs(expected_successes: 1, expected_failures: 0)
+          execute_all_jobs(expected_successes: 1, expected_failures: 0)
 
-        job_model.reload
-        expect(job_model.state).to eq('COMPLETE')
-        warnings = job_model.warnings
-        expect(warnings.to_json).to include(expected_warnings[0][:detail],expected_warnings[1][:detail])
+          job_model.reload
+          expect(job_model.state).to eq('COMPLETE')
+          warnings = job_model.warnings
+          expect(warnings.to_json).to include(expected_warnings[0][:detail], expected_warnings[1][:detail])
+        end
+      end
+
+      context 'when warnings were not issued' do
+        let(:expected_warnings) { nil }
+        it 'has empty list of warings ' do
+          enqueued_job = VCAP::CloudController::Jobs::Enqueuer.new(pollable_job).enqueue
+          job_model = VCAP::CloudController::PollableJobModel.make(delayed_job_guid: enqueued_job.guid, state: 'PROCESSING')
+
+          execute_all_jobs(expected_successes: 1, expected_failures: 0)
+
+          job_model.reload
+          expect(job_model.state).to eq('COMPLETE')
+          warnings = job_model.warnings
+          expect(warnings.to_json).to eq('[]')
+        end
       end
     end
 

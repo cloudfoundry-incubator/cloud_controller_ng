@@ -5,15 +5,13 @@ module VCAP::CloudController::Presenters::V3
   RSpec.describe JobPresenter do
     shared_examples_for(JobPresenter) do
       let(:api_error) { nil }
-      let(:warnings) { nil }
       let(:job) do
         VCAP::CloudController::PollableJobModel.make(
           state: VCAP::CloudController::PollableJobModel::COMPLETE_STATE,
           operation: "#{resource_type}.my_async_operation",
           resource_type: resource_type,
           resource_guid: resource.guid,
-          cf_api_error: api_error,
-          warnings: warnings
+          cf_api_error: api_error
         )
       end
       let(:result) { JobPresenter.new(job).to_hash }
@@ -109,17 +107,15 @@ module VCAP::CloudController::Presenters::V3
         end
 
         context 'when the job has a warning' do
-          let(:warnings) do
-            [
-              { message: 'warning one' },
-              { message: 'warning two' }
-            ]
+          before do
+            VCAP::CloudController::JobWarningModel.make(job: job, detail: 'warning one')
+            VCAP::CloudController::JobWarningModel.make(job: job, detail: 'warning two')
           end
 
           it 'presents the list of warnings' do
-            expect(result[:warnings]).to eq([
-              { message: 'warning one' },
-              { message: 'warning two' }
+            expect(result[:warnings]).to match_array([
+              { detail: 'warning one' },
+              { detail: 'warning two' }
             ])
           end
         end

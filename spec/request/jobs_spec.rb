@@ -53,14 +53,14 @@ RSpec.describe 'Jobs' do
         'operation' => 'user.test_job',
         'state' => 'COMPLETE',
         'errors' => [],
-        'warnings' => [
+        'warnings' => match_array([
           {
-            'message' => 'warning-one'
+            'detail' => 'warning-one'
           },
           {
-            'message' => 'warning-two'
-          }
-        ],
+              'detail' => 'warning-two'
+          },
+        ]),
         'links' => {
           'self' => { 'href' => "#{link_prefix}/v3/jobs/#{job_guid}" },
           'users' => { 'href' => "#{link_prefix}/v3/users/#{user.guid}" },
@@ -84,16 +84,8 @@ RSpec.describe 'Jobs' do
 
       def perform
         pollable_job = VCAP::CloudController::PollableJobModel.find_by_delayed_job_guid(@delayed_job_guid)
-        pollable_job.update(
-          warnings: [
-            {
-              message: 'warning-one'
-            },
-            {
-              message: 'warning-two'
-            }
-          ]
-        )
+        VCAP::CloudController::JobWarningModel.make(detail: 'warning-one', job_id: pollable_job.id)
+        VCAP::CloudController::JobWarningModel.make(detail: 'warning-two', job_id: pollable_job.id)
       end
 
       def job_name_in_configuration
