@@ -454,7 +454,10 @@ RSpec.describe 'V3 service brokers' do
     end
 
     context 'when the job succeeds' do
+      let(:config) { {} }
+
       before do
+        TestConfig.override(config)
         create_broker_successfully(global_broker_request_body, with: admin_headers)
         execute_all_jobs(expected_successes: 1, expected_failures: 0)
       end
@@ -463,6 +466,27 @@ RSpec.describe 'V3 service brokers' do
 
       it 'creates some UAA dashboard clients' do
         expect(a_request(:post, tx_url)).to have_been_made
+      end
+
+      context 'but warnings are emitted' do
+        let(:config) {
+          { uaa_client_name: nil, uaa_client_secret: nil }
+        }
+
+        it 'updates the job status' do
+          job_url = last_response['Location']
+          get job_url, {}, admin_headers
+          expect(parsed_response).to include({
+              'state' => 'COMPLETE',
+              'operation' => 'service_broker.catalog.synchronize',
+              'errors' => [],
+              'warnings' => [
+                include({
+                    'detail' => include('Warning: This broker includes configuration for a dashboard client.'),
+                })
+              ],
+          })
+        end
       end
     end
 
@@ -895,22 +919,6 @@ RSpec.describe 'V3 service brokers' do
         expect(response).to include('title' => 'CF-ServiceBrokerNotRemovable')
         expect(response).to include('detail' => "Can not remove brokers that have associated service instances: #{global_broker.name}")
       end
-
-      def create_service_instance(broker, with:)
-        service = VCAP::CloudController::Service.where(service_broker_id: broker.id).first
-        plan = VCAP::CloudController::ServicePlan.where(service_id: service.id).first
-        plan.public = true
-        plan.save
-
-        request_body = {
-            name: 'my-service-instance',
-            space_guid: space.guid,
-            service_plan_guid: plan.guid
-        }
-        # TODO: replace this with v3 once it's implemented
-        post('/v2/service_instances', request_body.to_json, with)
-        expect(last_response).to have_status_code(201)
-      end
     end
   end
 
@@ -989,7 +997,7 @@ RSpec.describe 'V3 service brokers' do
                       'name' => 'plan_name-1',
                       'description' => 'fake_plan_description 1',
                       'schemas' => nil
-                  }
+                }
               ],
               'dashboard_client' => dashboard_client(id)
           },
@@ -1018,5 +1026,21 @@ RSpec.describe 'V3 service brokers' do
         'secret' => 'my-dashboard-secret',
         'redirect_uri' => 'http://example.org'
     }
+  end
+
+  def create_service_instance(broker, with:)
+    service = VCAP::CloudController::Service.where(service_broker_id: broker.id).first
+    plan = VCAP::CloudController::ServicePlan.where(service_id: service.id).first
+    plan.public = true
+    plan.save
+
+    request_body = {
+        name: 'my-service-instance',
+        space_guid: space.guid,
+        service_plan_guid: plan.guid
+    }
+    # TODO: replace this with v3 once it's implemented
+    post('/v2/service_instances', request_body.to_json, with)
+    expect(last_response).to have_status_code(201)
   end
 end

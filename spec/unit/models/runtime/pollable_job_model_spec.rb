@@ -67,6 +67,17 @@ module VCAP::CloudController
         expect(job.warnings.size).to eq(2)
         expect(job.warnings).to include(*warnings)
       end
+
+      it 'deletes the warnings when the job is deleted' do
+        job = PollableJobModel.make
+        JobWarningModel.make(job: job, detail: 'something is wrong')
+        JobWarningModel.make(job: job, detail: 'something is really wrong')
+
+        job.destroy
+
+        expect(PollableJobModel.all).to be_empty
+        expect(JobWarningModel.all).to be_empty
+      end
     end
   end
 end

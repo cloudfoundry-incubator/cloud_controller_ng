@@ -4,9 +4,10 @@ module VCAP::CloudController
     COMPLETE_STATE = 'COMPLETE'.freeze
     FAILED_STATE = 'FAILED'.freeze
 
-    plugin :serialization
-
     one_to_many :warnings, class: 'VCAP::CloudController::JobWarningModel', key: :job_id
+
+    plugin :serialization
+    add_association_dependencies warnings: :destroy
 
     def complete?
       state == VCAP::CloudController::PollableJobModel::COMPLETE_STATE

@@ -15,14 +15,12 @@ module VCAP
               auth_password: 'password'
             )
           end
-          let(:warning_emitter) { double('warning emitter').as_null_object }
           let(:service_manager_factory) { Services::ServiceBrokers::ServiceManager }
 
           subject(:job) do
-            SynchronizeBrokerCatalogJob::Perform.new(
+            SynchronizeBrokerCatalogJob.new(
               broker.guid,
-              service_manager_factory: service_manager_factory,
-              warning_emitter: warning_emitter,
+                service_manager_factory: service_manager_factory,
             )
           end
 
@@ -56,10 +54,6 @@ module VCAP
               expect(service_plans.first.name).to eq(broker_client.plan_name)
 
               expect(broker_state).to eq(ServiceBrokerStateEnum::AVAILABLE)
-            end
-
-            it 'does not emit any warnings' do
-              expect(warning_emitter).not_to receive(:emit)
             end
 
             context 'when catalog returned by broker is invalid' do
@@ -103,16 +97,14 @@ module VCAP
               end
 
               it 'errors when there are uaa synchronization errors' do
-                begin
-                  job.perform
-                  fail('expected error to be raised')
-                rescue ::CloudController::Errors::ApiError => e
-                  expect(e.message).to include(
-                    'Service broker catalog is invalid',
+                job.perform
+                fail('expected error to be raised')
+              rescue ::CloudController::Errors::ApiError => e
+                expect(e.message).to include(
+                  'Service broker catalog is invalid',
                     'Service service_name',
                     'Service dashboard client id must be unique'
-                  )
-                end
+                )
               end
             end
           end
@@ -147,51 +139,66 @@ module VCAP
               allow(service_manager).to receive(:warnings).and_return([warning])
             end
 
-            it 'then the warning gets emitted' do
+            it 'then the warning gets stored' do
               job.perform
 
-              expect(warning_emitter).to have_received(:emit).with(warning)
+              expect(job.warnings).to include({ detail: warning.message })
             end
           end
-        end
 
-        def invalid_catalog
-          catalog = instance_double(Services::ServiceBrokers::V2::Catalog)
+          context 'when the client manager returns a warning' do
+            let(:warning) { VCAP::Services::SSO::DashboardClientManager::REQUESTED_FEATURE_DISABLED_WARNING }
 
-          allow(Services::ServiceBrokers::V2::Catalog).to receive(:new).
-            and_return(catalog)
+            before do
+              allow_any_instance_of(VCAP::Services::SSO::DashboardClientManager).to receive(:has_warnings?).and_return(true)
+              allow_any_instance_of(VCAP::Services::SSO::DashboardClientManager).to receive(:warnings).and_return([warning])
+            end
 
-          validation_errors = Services::ValidationErrors.new
-          validation_errors.add('Service dashboard_client id must be unique')
+            it 'then the warning gets stored' do
+              job.perform
 
-          validation_errors.add_nested(
-            double('double-name', name: 'service-name'),
-            Services::ValidationErrors.new.add('nested-error')
-          )
+              expect(job.warnings).to include({ detail: warning })
+            end
+          end
 
-          allow(catalog).to receive(:valid?).and_return(false)
-          allow(catalog).to receive(:validation_errors).and_return(validation_errors)
-        end
+          def invalid_catalog
+            catalog = instance_double(Services::ServiceBrokers::V2::Catalog)
 
-        def uaa_conflicting_catalog
-          allow(Services::ServiceClientProvider).to receive(:provide).
-            with(broker: broker).
-            and_return(FakeServiceBrokerV2Client::WithConflictingUAAClient.new)
-        end
+            allow(Services::ServiceBrokers::V2::Catalog).to receive(:new).
+              and_return(catalog)
 
-        def incompatible_catalog
-          catalog = instance_double(Services::ServiceBrokers::V2::Catalog)
+            validation_errors = Services::ValidationErrors.new
+            validation_errors.add('Service dashboard_client id must be unique')
 
-          allow(Services::ServiceBrokers::V2::Catalog).to receive(:new).
-            and_return(catalog)
+            validation_errors.add_nested(
+              double('double-name', name: 'service-name'),
+                Services::ValidationErrors.new.add('nested-error')
+            )
 
-          incompatibility_errors = Services::ValidationErrors.new
-          incompatibility_errors.add('Service 2 is declared to be a route service but support for route services is disabled.')
-          incompatibility_errors.add('Service 3 is declared to be a volume mount service but support for volume mount services is disabled.')
+            allow(catalog).to receive(:valid?).and_return(false)
+            allow(catalog).to receive(:validation_errors).and_return(validation_errors)
+          end
 
-          allow(catalog).to receive(:valid?).and_return(true)
-          allow(catalog).to receive(:compatible?).and_return(false)
-          allow(catalog).to receive(:incompatibility_errors).and_return(incompatibility_errors)
+          def uaa_conflicting_catalog
+            allow(Services::ServiceClientProvider).to receive(:provide).
+              with(broker: broker).
+              and_return(FakeServiceBrokerV2Client::WithConflictingUAAClient.new)
+          end
+
+          def incompatible_catalog
+            catalog = instance_double(Services::ServiceBrokers::V2::Catalog)
+
+            allow(Services::ServiceBrokers::V2::Catalog).to receive(:new).
+              and_return(catalog)
+
+            incompatibility_errors = Services::ValidationErrors.new
+            incompatibility_errors.add('Service 2 is declared to be a route service but support for route services is disabled.')
+            incompatibility_errors.add('Service 3 is declared to be a volume mount service but support for volume mount services is disabled.')
+
+            allow(catalog).to receive(:valid?).and_return(true)
+            allow(catalog).to receive(:compatible?).and_return(false)
+            allow(catalog).to receive(:incompatibility_errors).and_return(incompatibility_errors)
+          end
         end
       end
     end
