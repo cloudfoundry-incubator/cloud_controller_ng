@@ -6,6 +6,8 @@ module VCAP
   module CloudController
     module V3
       RSpec.describe 'V3::SynchronizeServiceBrokerCatalogJob' do
+        it_behaves_like 'delayed job', SynchronizeBrokerCatalogJob
+
         describe '#perform' do
           let(:broker) do
             ServiceBroker.create(
@@ -15,13 +17,9 @@ module VCAP
               auth_password: 'password'
             )
           end
-          let(:service_manager_factory) { Services::ServiceBrokers::ServiceManager }
 
           subject(:job) do
-            SynchronizeBrokerCatalogJob.new(
-              broker.guid,
-                service_manager_factory: service_manager_factory,
-            )
+            SynchronizeBrokerCatalogJob.new(broker.guid)
           end
 
           let(:broker_client) { FakeServiceBrokerV2Client.new }
@@ -129,10 +127,11 @@ module VCAP
 
           context 'when service manager returns a warning' do
             let(:service_manager) { instance_double(Services::ServiceBrokers::ServiceManager, sync_services_and_plans: nil) }
-            let(:service_manager_factory) { class_double(Services::ServiceBrokers::ServiceManager, new: service_manager) }
             let(:warning) { Services::ServiceBrokers::ServiceManager::DeactivatedPlansWarning.new }
 
             before do
+              allow(Services::ServiceBrokers::ServiceManager).to receive(:new).and_return(service_manager)
+
               warning.add(ServicePlan.make)
 
               allow(service_manager).to receive(:has_warnings?).and_return(true)
@@ -172,7 +171,7 @@ module VCAP
 
             validation_errors.add_nested(
               double('double-name', name: 'service-name'),
-                Services::ValidationErrors.new.add('nested-error')
+              Services::ValidationErrors.new.add('nested-error')
             )
 
             allow(catalog).to receive(:valid?).and_return(false)
