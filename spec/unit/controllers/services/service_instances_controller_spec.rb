@@ -1650,6 +1650,21 @@ module VCAP::CloudController
               }.not_to change { ServiceUsageEvent.count }
             end
           end
+
+          context 'when maintenance_info is not up-to-date and is not provided' do
+            let(:old_maintenance_info) { { 'version' => '1.0.0' } }
+            let(:plan) { ServicePlan.make(:v2, service: service, maintenance_info: { 'version': '2.0.0' }) }
+            let(:service_instance) { ManagedServiceInstance.make(service_plan: plan, maintenance_info: old_maintenance_info) }
+
+            it 'fails because the service instance needs to be upgraded first' do
+              put "/v2/service_instances/#{service_instance.guid}", body
+              expect(last_response).to have_status_code 422
+              expect(parsed_response).to include({
+                'error_code' => 'CF-MaintenanceInfoUpdateRequired'
+              })
+              expect(a_request(:patch, service_broker_url_regex)).not_to have_been_made
+            end
+          end
         end
 
         context 'when the request is a service instance rename' do

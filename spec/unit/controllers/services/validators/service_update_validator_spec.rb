@@ -6,9 +6,11 @@ module VCAP::CloudController
       let(:service_broker_url) { "http://example.com/v2/service_instances/#{service_instance.guid}" }
       let(:service_broker) { ServiceBroker.make(broker_url: 'http://example.com', auth_username: 'auth_username', auth_password: 'auth_password') }
       let(:service) { Service.make(plan_updateable: true, service_broker: service_broker) }
-      let(:old_service_plan) { ServicePlan.make(:v2, service: service, free: true, maintenance_info: { 'version': '2.0.0' }) }
+      let(:old_service_plan) { ServicePlan.make(:v2, service: service, free: true, maintenance_info: available_maintenance_info) }
       let(:new_service_plan) { ServicePlan.make(:v2, service: service) }
-      let(:service_instance) { ManagedServiceInstance.make(service_plan: old_service_plan) }
+      let(:current_maintenance_info) { { 'version' => '2.0.0' } }
+      let(:available_maintenance_info) { { 'version' => '2.0.0' } }
+      let(:service_instance) { ManagedServiceInstance.make(service_plan: old_service_plan, maintenance_info: current_maintenance_info) }
       let(:space) { service_instance.space }
 
       let(:update_attrs) { {} }
@@ -47,7 +49,15 @@ module VCAP::CloudController
           let(:active) {}
           let(:public) {}
 
-          let(:old_service_plan) { ServicePlan.make(:v2, service: service, active: active, public: public) }
+          let(:old_service_plan) do
+            ServicePlan.make(
+              :v2,
+              service: service,
+              active: active,
+              public: public, # rubocop:disable Layout/EmptyLinesAroundAccessModifier
+              maintenance_info: available_maintenance_info
+            )
+          end
 
           context 'when the current user is an admin' do
             before do
@@ -84,6 +94,25 @@ module VCAP::CloudController
               it 'allows the update' do
                 expect(ServiceUpdateValidator.validate!(service_instance, args)).to be true
               end
+            end
+          end
+
+          context 'when a maintenance_info upgrade is available and is requested' do
+            before do
+              set_current_user_as_admin
+            end
+
+            let(:available_maintenance_info) { { 'version' => '3.0.0' } }
+            let(:current_maintenance_info) { { 'version' => '2.0.0' } }
+            let(:update_attrs) do
+              {
+                'parameters' => { 'foo' => 'bar' },
+                'maintenance_info' => available_maintenance_info
+              }
+            end
+
+            it 'allows the update' do
+              expect(ServiceUpdateValidator.validate!(service_instance, args)).to be true
             end
           end
         end
@@ -365,10 +394,19 @@ module VCAP::CloudController
         context 'when parameters update requested' do
           let(:update_attrs) { { 'parameters' => { 'foo' => 'bar' } } }
 
-          let(:old_service_plan) { ServicePlan.make(:v2, service: service, active: active, public: public) }
+          let(:old_service_plan) do
+            ServicePlan.make(
+              :v2,
+              service: service,
+              active: active,
+              public: public, # rubocop:disable Layout/EmptyLinesAroundAccessModifier
+              maintenance_info: available_maintenance_info
+            )
+          end
 
           let(:active) {}
           let(:public) {}
+          let(:available_maintenance_info) { current_maintenance_info }
 
           context 'when the current user is space developer' do
             before do
@@ -395,6 +433,28 @@ module VCAP::CloudController
                   ServiceUpdateValidator.validate!(service_instance, args)
                 }.to raise_error(CloudController::Errors::ApiError, /Cannot update parameters of a service instance that belongs to inaccessible plan/)
               end
+            end
+          end
+
+          context 'when maintenance_info has pending upgrades' do
+            let(:current_maintenance_info) { { 'version' => '2.0.0' } }
+            let(:available_maintenance_info) { { 'version' => '3.0.0' } }
+
+            it 'fails because maintenance_info should be upgraded first' do
+              expect {
+                ServiceUpdateValidator.validate!(service_instance, args)
+              }.to raise_error(CloudController::Errors::ApiError, /maintenance_info should be upgraded before you can update service instance attributes/)
+            end
+          end
+
+          context 'when maintenance_info version is available but service instance does not have current one' do
+            let(:current_maintenance_info) { nil }
+            let(:available_maintenance_info) { { 'version' => '2.0.0' } }
+
+            it 'fails because maintenance_info should be upgraded first' do
+              expect {
+                ServiceUpdateValidator.validate!(service_instance, args)
+              }.to raise_error(CloudController::Errors::ApiError, /maintenance_info should be upgraded before you can update service instance attributes/)
             end
           end
         end

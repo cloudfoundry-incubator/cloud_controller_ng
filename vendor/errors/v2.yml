@@ -1229,6 +1229,11 @@
   http_code: 422
   message: "maintenance_info should not be changed when switching to different plan."
 
+390009:
+  name: MaintenanceInfoUpdateRequired
+  http_code: 422
+  message: "maintenance_info should be upgraded before you can update service instance attributes."
+
 390011:
   name: BuildpackStacksDontMatch
   http_code: 422

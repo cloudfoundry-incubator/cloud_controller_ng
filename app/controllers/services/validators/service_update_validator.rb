@@ -11,6 +11,9 @@ module VCAP::CloudController
         prevent_maintenance_info_and_plan_update(service_plan, update_attrs['service_plan_guid'], update_attrs['maintenance_info'])
         validate_changing_plan(service_plan, service, service_instance, update_attrs['service_plan_guid'])
         check_plan_still_valid(service_instance, service_plan, update_attrs['service_plan_guid'])
+        require_maintenance_info_upgrade_if_available_before_params_update(
+          service_instance, service_plan, update_attrs['parameters'], update_attrs['maintenance_info']
+        )
         validate_update_of_service_parameters(service_instance, update_attrs['parameters'])
         validate_maintenance_info_update(service_plan, update_attrs['maintenance_info'])
         true
@@ -54,6 +57,21 @@ module VCAP::CloudController
       def prevent_maintenance_info_and_plan_update(current_plan, requested_plan_guid, requested_maintenance_info)
         if plan_update_requested?(requested_plan_guid, current_plan) && requested_maintenance_info
           raise CloudController::Errors::ApiError.new_from_details('MaintenanceInfoNotUpdatableWhenChangingPlan')
+        end
+      end
+
+      def require_maintenance_info_upgrade_if_available_before_params_update(
+        service_instance, service_plan, parameters, requested_maintenance_info
+      )
+        current_maintenance_info = service_instance.maintenance_info
+        available_maintenance_info = service_plan.maintenance_info
+
+        return unless parameters
+        return unless available_maintenance_info
+        return if requested_maintenance_info
+
+        if !current_maintenance_info || current_maintenance_info['version'] != available_maintenance_info['version']
+          raise CloudController::Errors::ApiError.new_from_details('MaintenanceInfoUpdateRequired')
         end
       end
 
