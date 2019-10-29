@@ -25,21 +25,23 @@ module VCAP::CloudController
         end
 
         pollable_job = nil
-        ServiceBroker.db.transaction do
-          broker.update(params)
+        ServiceBrokerUpdateCred.db.transaction do
+          # broker.update(params)
+          #
+          # if broker.service_broker_state
+          #   broker.service_broker_state.update(state: ServiceBrokerStateEnum::SYNCHRONIZING)
+          # else
+          #   ServiceBrokerState.create(
+          #     service_broker_id: broker.id,
+          #     state: ServiceBrokerStateEnum::SYNCHRONIZING
+          #   )
+          # end
+          #
+          # service_event_repository.record_broker_event_with_request(:update, broker, message.audit_hash)
 
-          if broker.service_broker_state
-            broker.service_broker_state.update(state: ServiceBrokerStateEnum::SYNCHRONIZING)
-          else
-            ServiceBrokerState.create(
-              service_broker_id: broker.id,
-              state: ServiceBrokerStateEnum::SYNCHRONIZING
-            )
-          end
+          cred = ServiceBrokerUpdateCred.create(password: params.delete(:auth_password))
 
-          service_event_repository.record_broker_event_with_request(:update, broker, message.audit_hash)
-
-          synchronization_job = SynchronizeBrokerCatalogJob.new(broker.guid)
+          synchronization_job = SynchronizeBrokerCatalogJob.new(broker.guid, params, cred.guid)
           pollable_job = Jobs::Enqueuer.new(synchronization_job, queue: Jobs::Queues.generic).enqueue_pollable
         end
 

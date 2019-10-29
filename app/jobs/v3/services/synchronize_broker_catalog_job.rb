@@ -3,12 +3,14 @@ module VCAP::CloudController
     class SynchronizeBrokerCatalogJob < VCAP::CloudController::Jobs::CCJob
       attr_reader :warnings
 
-      def initialize(broker_guid)
+      def initialize(broker_guid, params, cred_guid)
         @broker_guid = broker_guid
+        @params = params
+        @cred_guid = cred_guid
       end
 
       def perform
-        @warnings = Perform.new(@broker_guid).perform
+        @warnings = Perform.new(@broker_guid, @params, @cred_guid).perform
       end
 
       def job_name_in_configuration
@@ -36,9 +38,12 @@ module VCAP::CloudController
       attr_reader :broker_guid
 
       class Perform
-        def initialize(broker_guid)
+        def initialize(broker_guid, params, cred_guid)
           @broker_guid = broker_guid
+          @params = params
+          @cred_guid = cred_guid
           @broker = ServiceBroker.find(guid: broker_guid)
+          @cred = ServiceBrokerUpdateCred.find(guid: cred_guid)
           @formatter = VCAP::Services::ServiceBrokers::ValidationErrorsFormatter.new
           @service_event_repository = VCAP::CloudController::Repositories::ServiceEventRepository::WithBrokerActor.new
           @client_manager = VCAP::Services::SSO::DashboardClientManager.new(broker, service_event_repository)
@@ -49,21 +54,26 @@ module VCAP::CloudController
           synchronizing_state
 
           catalog = VCAP::Services::ServiceBrokers::V2::Catalog.new(broker, broker_client.catalog)
-
           raise fail_with_invalid_catalog(catalog.validation_errors) unless catalog.valid?
           raise fail_with_incompatible_catalog(catalog.incompatibility_errors) unless catalog.compatible?
 
-          unless client_manager.synchronize_clients_with_catalog(catalog)
-            raise fail_with_invalid_catalog(client_manager.errors)
+          ServiceBroker.db.transaction do
+            update_broker_attrs
+
+            unless client_manager.synchronize_clients_with_catalog(catalog)
+              raise fail_with_invalid_catalog(client_manager.errors)
+            end
+
+            service_manager.sync_services_and_plans(catalog)
+
+            available_state
           end
-
-          service_manager.sync_services_and_plans(catalog)
-
-          available_state
           collect_warnings
         rescue
           failed_state
           raise
+        ensure
+          @cred.destroy
         end
 
         private
@@ -86,6 +96,11 @@ module VCAP::CloudController
 
         def available_state
           broker.update_state(ServiceBrokerStateEnum::AVAILABLE)
+        end
+
+        def update_broker_attrs
+          broker.update(params.merge(auth_password: @cred.password))
+          service_event_repository.record_broker_event_with_request(:update, broker, message.audit_hash)
         end
 
         def fail_with_invalid_catalog(errors)
