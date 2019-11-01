@@ -1,4 +1,5 @@
 require 'fetchers/service_offerings_fetcher'
+require 'presenters/v3/service_offering_presenter'
 
 class ServiceOfferingsController < ApplicationController
   def show
@@ -14,7 +15,8 @@ class ServiceOfferingsController < ApplicationController
 
     service_offering_not_found! if offering.nil?
 
-    render status: :ok, json: { guid: guid }.to_json
+    presenter = Presenters::V3::ServiceOfferingPresenter.new(offering)
+    render status: :ok, json: presenter.to_json
   end
 
   def enforce_authentication?

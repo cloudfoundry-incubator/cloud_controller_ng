@@ -15,9 +15,10 @@ RSpec.describe 'V3 service offerings' do
           get "/v3/service_offerings/#{guid}", nil, admin_headers
 
           expect(last_response).to have_status_code(200)
-          expect(parsed_response).to eq({
-            'guid' => guid
-          })
+          expect(parsed_response).to match(hash_including(
+            'guid' => guid,
+            'name' => service_offering.label
+          ))
         end
       end
 
@@ -47,9 +48,10 @@ RSpec.describe 'V3 service offerings' do
           get "/v3/service_offerings/#{guid}", nil, headers_for(user)
 
           expect(last_response).to have_status_code(200)
-          expect(parsed_response).to eq({
-            'guid' => guid
-          })
+          expect(parsed_response).to match(hash_including(
+            'guid' => guid,
+            'name' => service_offering.label
+          ))
         end
       end
 
@@ -58,9 +60,10 @@ RSpec.describe 'V3 service offerings' do
           get "/v3/service_offerings/#{guid}"
 
           expect(last_response).to have_status_code(200)
-          expect(parsed_response).to eq({
-            'guid' => guid
-          })
+          expect(parsed_response).to match(hash_including(
+            'guid' => guid,
+            'name' => service_offering.label
+          ))
         end
       end
     end
@@ -86,9 +89,10 @@ RSpec.describe 'V3 service offerings' do
           get "/v3/service_offerings/#{guid}", nil, headers_for(user)
 
           expect(last_response).to have_status_code(200)
-          expect(parsed_response).to eq({
-            'guid' => guid
-          })
+          expect(parsed_response).to match(hash_including(
+            'guid' => guid,
+            'name' => service_offering.label
+          ))
         end
       end
 
