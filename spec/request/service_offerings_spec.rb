@@ -26,6 +26,13 @@ RSpec.describe 'V3 service offerings' do
           get "/v3/service_offerings/#{guid}", nil, headers_for(user)
 
           expect(last_response).to have_status_code(404)
+          expect(parsed_response).to match({
+            'errors' => [hash_including(
+              'detail' => 'Service offering not found',
+              'title' => 'CF-ResourceNotFound',
+              'code' => 10010
+            )]
+          })
         end
       end
     end
@@ -90,6 +97,13 @@ RSpec.describe 'V3 service offerings' do
           get "/v3/service_offerings/#{guid}", nil, headers_for(user)
 
           expect(last_response).to have_status_code(404)
+          expect(parsed_response).to match({
+            'errors' => [hash_including(
+              'detail' => 'Service offering not found',
+              'title' => 'CF-ResourceNotFound',
+              'code' => 10010
+            )]
+          })
         end
       end
 
