@@ -8,11 +8,12 @@ RSpec.describe VCAP::CloudController::Presenters::V3::ServiceOfferingPresenter d
   let(:description) { 'some offering description' }
   let(:available) { true }
   let(:bindable) { true }
-  let(:metatdata) { '{"foo" => "bar"}' }
+  let(:metadata) { '{"foo": "bar"}' }
   let(:id) { 'broker-id' }
   let(:tags) { %w(foo bar) }
   let(:requires) { %w(syslog_drain route_forwarding volume_mount) }
-  let(:updatable) { true }
+  let(:updateable) { true }
+
   let(:model) do
     VCAP::CloudController::Service.make(
       guid: guid,
@@ -20,11 +21,11 @@ RSpec.describe VCAP::CloudController::Presenters::V3::ServiceOfferingPresenter d
       description: description,
       active: available,
       bindable: bindable,
-      extra: metatdata,
+      extra: metadata,
       unique_id: id,
       tags: tags,
       requires: requires,
-      plan_updateable: updatable
+      plan_updateable: updateable
     )
   end
 
@@ -38,14 +39,31 @@ RSpec.describe VCAP::CloudController::Presenters::V3::ServiceOfferingPresenter d
         'description': description,
         'available': available,
         'bindable': bindable,
-        'broker_service_offering_metadata': metatdata,
+        'broker_service_offering_metadata': metadata,
         'broker_service_offering_id': id,
         'tags': tags,
         'requires': requires,
         'created_at': model.created_at,
         'updated_at': model.updated_at,
-        'plan_updateable': updatable
+        'plan_updateable': updateable,
+        'shareable': false,
       })
+    end
+
+    context 'when the broker metadata contains a `shareable` field' do
+      let(:metadata) { '{"shareable": true}' }
+
+      it 'reads it' do
+        expect(result[:shareable]).to be true
+      end
+    end
+
+    context 'when the broker metadata cannot be parsed' do
+      let(:metadata) { 'this will cause a JSON parse error' }
+
+      it 'defaults `shareable` to false' do
+        expect(result[:shareable]).to be false
+      end
     end
   end
 end

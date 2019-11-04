@@ -20,7 +20,8 @@ module VCAP::CloudController
             requires: service_offering.requires,
             created_at: service_offering.created_at,
             updated_at: service_offering.updated_at,
-            plan_updateable: service_offering.plan_updateable
+            plan_updateable: service_offering.plan_updateable,
+            shareable: shareable
           }
         end
 
@@ -28,6 +29,18 @@ module VCAP::CloudController
 
         def service_offering
           @resource
+        end
+
+        def shareable
+          begin
+            metadata = JSON.parse(service_offering.extra)
+            if metadata['shareable'] == true
+              return true
+            end
+          rescue JSON::ParserError
+          end
+
+          false
         end
       end
     end
