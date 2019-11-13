@@ -92,7 +92,65 @@ RSpec.describe 'V3 service offerings' do
     end
 
     context 'when service offering comes from space scoped broker' do
-      # TODO: Think about this
+      let!(:broker_org) { VCAP::CloudController::Organization.make }
+      let!(:broker_space) { VCAP::CloudController::Space.make(organization: org) }
+      let!(:service_broker) { VCAP::CloudController::ServiceBroker.make(space: broker_space) }
+      let!(:service_offering) { VCAP::CloudController::Service.make(service_broker: service_broker) }
+      let!(:service_plan) { VCAP::CloudController::ServicePlan.make(service: service_offering) }
+      let!(:guid) { service_offering.guid }
+
+      context 'the user is in the same space as the service broker' do
+        let(:user) { VCAP::CloudController::User.make }
+        let(:org) { broker_org }
+        let(:space) { broker_space }
+
+        let(:expected_codes_and_responses) do
+          h = Hash.new(successful_response)
+          # h['admin'] = successful_response
+          # h['admin_read_only'] = successful_response
+          # h['global_auditor'] = successful_response
+          h
+        end
+
+        it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
+      end
+
+      context 'the user is in a different space to the service broker' do
+        let(:user) { VCAP::CloudController::User.make }
+        let(:org) { VCAP::CloudController::Organization.make }
+        let(:space) { VCAP::CloudController::Space.make(organization: org) }
+
+        let(:expected_codes_and_responses) do
+          h = Hash.new(code: 404)
+          h['admin'] = successful_response
+          h['admin_read_only'] = successful_response
+          h['global_auditor'] = successful_response
+          h
+        end
+
+        it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
+      end
+
+      context 'the user is a SpaceDeveloper in the space of the broker, but is targetting a different space' do
+        let(:user) { VCAP::CloudController::User.make }
+        let(:org) { VCAP::CloudController::Organization.make }
+        let(:space) { VCAP::CloudController::Space.make(organization: org) }
+
+        before do
+          broker_org.add_user(user)
+          broker_space.add_developer(user)
+        end
+
+        let(:expected_codes_and_responses) do
+          h = Hash.new(successful_response)
+          # h['admin'] = successful_response
+          # h['admin_read_only'] = successful_response
+          # h['global_auditor'] = successful_response
+          h
+        end
+
+        it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
+      end
     end
   end
 end
