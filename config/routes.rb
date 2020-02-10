@@ -187,6 +187,9 @@ Rails.application.routes.draw do
   patch '/service_plans/:guid', to: 'service_plans#update'
   delete '/service_plans/:guid', to: 'service_plans#destroy'
 
+  # service_plan_visibility
+  get '/service_plans/:guid/visibility', to: 'service_plan_visibility#show'
+
   # space_manifests
   post '/spaces/:guid/actions/apply_manifest', to: 'space_manifests#apply_manifest'
 
