@@ -193,12 +193,90 @@ RSpec.describe 'V3 service instances' do
       end
     end
 
+    describe 'includes' do
+      it 'can include `space.organization`' do
+        get '/v3/service_plans?include=space.organization', nil, admin_headers
+        expect(last_response).to have_status_code(200)
+      end
+    end
+
     def check_filtered_instances(*instances)
       expect(last_response).to have_status_code(200)
       expect(parsed_response['resources'].length).to be(instances.length)
       expect({ resources: parsed_response['resources'] }).to match_json_response(
         { resources: instances }
       )
+    end
+  end
+
+  describe 'GET /v3/service_instances/:guid/credentials' do
+    let(:api_call) { lambda { |user_headers| get "/v3/service_instances/#{guid}/credentials", nil, user_headers } }
+
+    let(:credentials) { { 'fake-key' => 'fake-value' } }
+    let(:guid) { instance.guid }
+
+    context 'service instance does not exist' do
+      let(:guid) { 'no-such-service-instance' }
+
+      let(:expected_codes_and_responses) do
+        Hash.new(code: 404)
+      end
+
+      it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
+    end
+
+    context 'no credentials set' do
+      let(:instance) { VCAP::CloudController::UserProvidedServiceInstance.make(space: space, credentials: nil) }
+
+      let(:expected_codes_and_responses) do
+        h = Hash.new(
+          code: 200,
+          response_object: {},
+        )
+
+        h['global_auditor'] = { code: 403 }
+        h['space_manager'] = { code: 403 }
+        h['space_auditor'] = { code: 403 }
+        h['org_manager'] = { code: 403 }
+        h['org_auditor'] = { code: 404 }
+        h['org_billing_manager'] = { code: 404 }
+        h['no_role'] = { code: 404 }
+        h
+      end
+
+      it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
+    end
+
+    context 'a user-provided service instance' do
+      let(:instance) { VCAP::CloudController::UserProvidedServiceInstance.make(space: space, credentials: credentials) }
+
+      let(:expected_codes_and_responses) do
+        h = Hash.new(
+          code: 200,
+          response_object: credentials,
+        )
+
+        h['global_auditor'] = { code: 403 }
+        h['space_manager'] = { code: 403 }
+        h['space_auditor'] = { code: 403 }
+        h['org_manager'] = { code: 403 }
+        h['org_auditor'] = { code: 404 }
+        h['org_billing_manager'] = { code: 404 }
+        h['no_role'] = { code: 404 }
+        h
+      end
+
+      it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
+    end
+
+    context 'managed service instance' do
+      let(:instance) { VCAP::CloudController::ManagedServiceInstance.make(space: space) }
+
+      let(:expected_codes_and_responses) do
+        Hash.new(code: 404)
+      end
+
+      it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
     end
   end
 
@@ -268,11 +346,14 @@ RSpec.describe 'V3 service instances' do
       },
       links: {
         self: {
-          href: %r(#{Regexp.escape(link_prefix)}/v3/service_instances/#{instance.guid})
+          href: "#{link_prefix}/v3/service_instances/#{instance.guid}"
         },
         space: {
-          href: %r(#{Regexp.escape(link_prefix)}/v3/spaces/#{instance.space.guid})
+          href: "#{link_prefix}/v3/spaces/#{instance.space.guid}"
         },
+        credentials: {
+          href: "#{link_prefix}/v3/service_instances/#{instance.guid}/credentials"
+        }
       },
     }
   end
