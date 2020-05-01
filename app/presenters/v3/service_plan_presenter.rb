@@ -16,6 +16,7 @@ module VCAP::CloudController
             available: service_plan.active?,
             name: service_plan.name,
             free: service_plan.free,
+            costs: costs,
             description: service_plan.description,
             maintenance_info: maintenance_info,
             broker_catalog: {
@@ -51,6 +52,27 @@ module VCAP::CloudController
 
         def metadata
           parse(service_plan.extra)
+        end
+
+        def costs
+          cost_result = []
+          if metadata[:costs]
+            metadata[:costs].each do |cost|
+              unit = cost[:unit].to_s unless cost[:unit].nil?
+              if cost[:amount] && cost[:amount].any?
+                cost[:amount].each do |currency, amount|
+                  cost_result << {
+                    currency: currency.to_s.upcase,
+                    amount: amount.to_f,
+                    unit: unit || ''
+                  }
+                end
+              else
+                cost_result << { unit: unit || '' }
+              end
+            end
+          end
+          cost_result
         end
 
         def maintenance_info
