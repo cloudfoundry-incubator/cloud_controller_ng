@@ -4,41 +4,19 @@ require 'cloud_controller/errors/api_error'
 
 module VCAP::CloudController
   module V3
-    class FakeAsyncOperation < ServiceInstanceAsyncJob
-      attr_accessor :request_attr
-
-      def operation_type
-        'fake-operation'
-      end
-
-      def operation
-        :fakeoperation
-      end
-
-      def operation_succeeded; end
-
-      def send_broker_request(_) end
-    end
-
-    RSpec.describe ServiceInstanceAsyncJob do
+    RSpec.shared_examples_for 'an async service instance job' do
       let(:logger) { instance_double(Steno::Logger, error: nil, info: nil, warn: nil) }
       let(:service_offering) { Service.make }
       let(:maximum_polling_duration) { nil }
       let(:service_plan) { ServicePlan.make(service: service_offering, maximum_polling_duration: maximum_polling_duration) }
       let(:service_instance) {
         si = ManagedServiceInstance.make(service_plan: service_plan)
-        si.save_with_new_operation({}, { type: operation, state: 'in progress' })
+        si.save_with_new_operation({}, {type: operation, state: 'in progress'})
         si.reload
       }
       let(:audit_info) { UserAuditInfo.new(user_guid: User.make.guid, user_email: 'foo@example.com') }
       let(:guid) { service_instance.guid }
-      let(:job) do
-        FakeAsyncOperation.new(guid, audit_info).tap do |j|
-          j.request_attr = { some_data: 'some_data' }
-        end
-      end
       let(:client) { instance_double(VCAP::Services::ServiceBrokers::V2::Client) }
-      let(:operation) { 'fake-operation' }
 
       before do
         allow(Steno).to receive(:logger).and_return(logger)
@@ -53,17 +31,17 @@ module VCAP::CloudController
       describe '#perform' do
         let(:operation_response) { {} }
         before do
-          allow_any_instance_of(FakeAsyncOperation).to receive(:send_broker_request).and_return(operation_response)
-          allow_any_instance_of(FakeAsyncOperation).to receive(:operation_succeeded)
+          allow_any_instance_of(described_class).to receive(:send_broker_request).and_return(operation_response)
+          allow_any_instance_of(described_class).to receive(:operation_succeeded)
         end
 
         it 'raises by default if the service instance does not exist' do
           service_instance.destroy
 
           expect { job.perform }.to raise_error(
-            CloudController::Errors::ApiError,
-            /The service instance could not be found/
-          )
+                                      CloudController::Errors::ApiError,
+                                      /The service instance could not be found/
+                                    )
         end
 
         it 'returns if gone! is defined' do
@@ -76,14 +54,14 @@ module VCAP::CloudController
 
         context 'when there is another operation in progress' do
           before do
-            service_instance.save_with_new_operation({}, { type: 'some-other-operation', state: 'in progress', description: 'barz' })
+            service_instance.save_with_new_operation({}, {type: 'some-other-operation', state: 'in progress', description: 'barz'})
           end
 
           it 'raises an error' do
             expect { job.perform }.to raise_error(
-              CloudController::Errors::ApiError,
-              /could not be completed: some-other-operation in progress/
-            )
+                                        CloudController::Errors::ApiError,
+                                        /could not be completed: some-other-operation in progress/
+                                      )
           end
 
           it 'does not update the last operation' do
@@ -97,8 +75,8 @@ module VCAP::CloudController
           context 'computes the maximum duration' do
             before do
               TestConfig.override({
-                broker_client_max_async_poll_duration_minutes: 90009
-              })
+                                    broker_client_max_async_poll_duration_minutes: 90009
+                                  })
               job.perform
             end
 
@@ -156,7 +134,7 @@ module VCAP::CloudController
 
           context 'when sending the operation request fails' do
             it 'raises the error and fails the last operation' do
-              allow_any_instance_of(FakeAsyncOperation).to receive(:send_broker_request).and_raise(RuntimeError, 'not today')
+              allow_any_instance_of(described_class).to receive(:send_broker_request).and_raise(RuntimeError, 'not today')
 
               expect { job.perform }.to raise_error(RuntimeError, 'not today')
 
@@ -168,7 +146,7 @@ module VCAP::CloudController
 
           context 'when the broker responds synchronously' do
             let(:operation_response) {
-              { last_operation: { state: 'succeeded', type: operation } }
+              {last_operation: {state: 'succeeded', type: operation}}
             }
 
             before do
@@ -193,10 +171,10 @@ module VCAP::CloudController
 
           context 'when the broker responds asynchronously' do
             let(:operation_response) {
-              { last_operation: { state: 'in progress', type: operation, description: 'abc' } }
+              {last_operation: {state: 'in progress', type: operation, description: 'abc'}}
             }
             let(:last_operation_response) {
-              { last_operation: { state: 'some state', type: operation } }
+              {last_operation: {state: 'some state', type: operation}}
             }
 
             before do
@@ -223,10 +201,10 @@ module VCAP::CloudController
 
         context 'when it is re-executed' do
           let(:operation_response) {
-            { last_operation: { state: 'in progress', type: operation } }
+            {last_operation: {state: 'in progress', type: operation}}
           }
           let(:last_operation_responses) {
-            [{ last_operation: { state: 'in progress', type: operation } }]
+            [{last_operation: {state: 'in progress', type: operation}}]
           }
 
           before do
@@ -249,10 +227,10 @@ module VCAP::CloudController
 
         context 'fetching the last operation' do
           let(:operation_response) {
-            { last_operation: { state: 'in progress', type: operation } }
+            {last_operation: {state: 'in progress', type: operation}}
           }
           let(:last_operation_responses) {
-            [{ last_operation: { state: 'in progress', type: operation } }]
+            [{last_operation: {state: 'in progress', type: operation}}]
           }
 
           before do
@@ -265,8 +243,8 @@ module VCAP::CloudController
           context 'when it returns success' do
             let(:last_operation_responses) {
               [
-                { last_operation: { state: 'in progress', type: operation } },
-                { last_operation: { state: 'succeeded', type: operation, description: 'done' } }
+                {last_operation: {state: 'in progress', type: operation}},
+                {last_operation: {state: 'succeeded', type: operation, description: 'done'}}
               ]
             }
 
@@ -286,7 +264,7 @@ module VCAP::CloudController
               end
 
               it 'records an audit event' do
-                event = Event.find(type: 'audit.service_instance.fake-operation')
+                event = Event.find(type: "audit.service_instance.#{operation}")
                 expect(event).to be
                 expect(event.actee).to eq(service_instance.guid)
                 expect(event.metadata['request']).to have_key('some_data')
@@ -299,7 +277,7 @@ module VCAP::CloudController
 
             context 'when #operation_succeeded raises' do
               it 'fails the operation' do
-                allow_any_instance_of(FakeAsyncOperation).to receive(:operation_succeeded).and_raise('failed oh no')
+                allow_any_instance_of(described_class).to receive(:operation_succeeded).and_raise('failed oh no')
 
                 expect { job.perform }.to raise_error('failed oh no')
                 expect(service_instance.last_operation.type).to eq(operation)
@@ -313,16 +291,16 @@ module VCAP::CloudController
             context 'and the operation type has not changed' do
               let(:last_operation_responses) {
                 [
-                  { last_operation: { state: 'in progress', type: operation } },
-                  { last_operation: { state: 'failed', type: operation, description: 'im sorry' } }
+                  {last_operation: {state: 'in progress', type: operation}},
+                  {last_operation: {state: 'failed', type: operation, description: 'im sorry'}}
                 ]
               }
 
               it 'raises an error and updates the service instance last operation' do
                 expect { job.perform }.to raise_error(
-                  CloudController::Errors::ApiError,
-                  /fake-operation could not be completed/
-                )
+                                            CloudController::Errors::ApiError,
+                                            /#{operation} could not be completed/
+                                          )
 
                 expect(service_instance.last_operation.type).to eq(operation)
                 expect(service_instance.last_operation.state).to eq('failed')
@@ -333,18 +311,18 @@ module VCAP::CloudController
             context 'but the operation type has changed' do
               let(:last_operation_responses) {
                 [
-                  { last_operation: { state: 'in progress', type: operation } },
-                  { last_operation: { state: 'in progress', type: operation } },
-                  { last_operation: { state: 'failed', type: 'another-operation', description: 'im sorry' } }
+                  {last_operation: {state: 'in progress', type: operation}},
+                  {last_operation: {state: 'in progress', type: operation}},
+                  {last_operation: {state: 'failed', type: 'another-operation', description: 'im sorry'}}
                 ]
               }
 
               it 'raises when retried' do
                 expect { job.perform }.not_to raise_error
                 expect { job.perform }.to raise_error(
-                  CloudController::Errors::ApiError,
-                  /fake-operation could not be completed/
-                )
+                                            CloudController::Errors::ApiError,
+                                            /#{operation} could not be completed/
+                                          )
               end
             end
           end
@@ -352,8 +330,8 @@ module VCAP::CloudController
           context 'when it returns in progress' do
             let(:last_operation_responses) {
               [
-                { last_operation: { state: 'in progress', type: operation } },
-                { last_operation: { state: 'in progress', type: operation, description: 'done' } },
+                {last_operation: {state: 'in progress', type: operation}},
+                {last_operation: {state: 'in progress', type: operation, description: 'done'}},
               ]
             }
 
@@ -370,11 +348,11 @@ module VCAP::CloudController
             let(:last_operation_responses) {
               [
                 {
-                  last_operation: { state: 'in progress', type: operation },
+                  last_operation: {state: 'in progress', type: operation},
                   retry_after: 95
                 },
                 {
-                  last_operation: { state: 'in progress', type: operation },
+                  last_operation: {state: 'in progress', type: operation},
                   retry_after: 180
                 },
               ]
@@ -390,7 +368,7 @@ module VCAP::CloudController
           context 'when the description is long (mysql)' do
             let(:long_description) { '123' * 512 }
             let(:last_operation_responses) {
-              [{ last_operation: { state: 'in progress', type: operation, description: long_description } }]
+              [{last_operation: {state: 'in progress', type: operation, description: long_description}}]
             }
 
             it 'updates the description' do
@@ -401,8 +379,8 @@ module VCAP::CloudController
           context 'when there is no description' do
             let(:last_operation_responses) {
               [
-                { last_operation: { state: 'in progress', type: operation, description: 'abc' } },
-                { last_operation: { state: 'in progress', type: operation } }
+                {last_operation: {state: 'in progress', type: operation, description: 'abc'}},
+                {last_operation: {state: 'in progress', type: operation}}
               ]
             }
 
@@ -472,8 +450,8 @@ module VCAP::CloudController
           context 'when timeout is reached' do
             let(:last_operation_responses) {
               [
-                { last_operation: { state: 'in progress', type: operation } },
-                { last_operation: { state: 'in progress', type: operation } }
+                {last_operation: {state: 'in progress', type: operation}},
+                {last_operation: {state: 'in progress', type: operation}}
               ]
             }
 
@@ -481,9 +459,9 @@ module VCAP::CloudController
               Timecop.freeze(Time.now + job.maximum_duration_seconds + 1) do
                 Jobs::Enqueuer.new(job, queue: Jobs::Queues.generic).enqueue_pollable
                 execute_all_jobs(expected_successes: 0, expected_failures: 1, jobs_to_execute: 1)
-                expect(service_instance.last_operation.type).to eq('fake-operation')
+                expect(service_instance.last_operation.type).to eq(operation)
                 expect(service_instance.last_operation.state).to eq('failed')
-                expect(service_instance.last_operation.description).to eq('Service Broker failed to fakeoperation within the required time.')
+                expect(service_instance.last_operation.description).to eq("Service Broker failed to #{broker_operation} within the required time.")
               end
             end
 
@@ -494,9 +472,9 @@ module VCAP::CloudController
                 Timecop.freeze(Time.now + 4321 + 1) do
                   Jobs::Enqueuer.new(job, queue: Jobs::Queues.generic).enqueue_pollable
                   execute_all_jobs(expected_successes: 0, expected_failures: 1, jobs_to_execute: 1)
-                  expect(service_instance.last_operation.type).to eq('fake-operation')
+                  expect(service_instance.last_operation.type).to eq(operation)
                   expect(service_instance.last_operation.state).to eq('failed')
-                  expect(service_instance.last_operation.description).to eq('Service Broker failed to fakeoperation within the required time.')
+                  expect(service_instance.last_operation.description).to eq("Service Broker failed to #{broker_operation} within the required time.")
                 end
               end
             end
@@ -509,13 +487,13 @@ module VCAP::CloudController
           job.handle_timeout
           expect(service_instance.last_operation.type).to eq(operation)
           expect(service_instance.last_operation.state).to eq('failed')
-          expect(service_instance.last_operation.description).to eq('Service Broker failed to fakeoperation within the required time.')
+          expect(service_instance.last_operation.description).to eq("Service Broker failed to #{broker_operation} within the required time.")
         end
       end
 
       describe '#job_name_in_configuration' do
         it 'returns the job name' do
-          expect(job.job_name_in_configuration).to eq('service_instance_fake-operation')
+          expect(job.job_name_in_configuration).to eq(job_name_in_configuration)
         end
       end
 
@@ -539,9 +517,39 @@ module VCAP::CloudController
 
       describe '#display_name' do
         it 'returns the display name' do
-          expect(job.display_name).to eq('service_instance.fake-operation')
+          expect(job.display_name).to eq(display_name)
         end
       end
+    end
+
+    RSpec.describe CreateServiceInstanceJob do
+      let(:job) { CreateServiceInstanceJob.new(guid, user_audit_info: audit_info) }
+      let(:display_name) { 'service_instance.create' }
+      let(:job_name_in_configuration) { 'service_instance_create' }
+      let(:operation) { 'create' }
+      let(:broker_operation) { :provision }
+
+      it_behaves_like 'an async service instance job'
+    end
+
+    RSpec.describe DeleteServiceInstanceJob do
+      let(:job) { DeleteServiceInstanceJob.new(guid, audit_info) }
+      let(:display_name) { 'service_instance.delete' }
+      let(:job_name_in_configuration) { 'service_instance_delete' }
+      let(:operation) { 'delete' }
+      let(:broker_operation) { :deprovision }
+
+      it_behaves_like 'an async service instance job'
+    end
+
+    RSpec.describe UpdateServiceInstanceJob do
+      let(:job) { UpdateServiceInstanceJob.new(guid, user_audit_info: audit_info, message: "") }
+      let(:display_name) { 'service_instance.update' }
+      let(:job_name_in_configuration) { 'service_instance_update' }
+      let(:operation) { 'update' }
+      let(:broker_operation) { :update }
+
+      it_behaves_like 'an async service instance job'
     end
   end
 end
