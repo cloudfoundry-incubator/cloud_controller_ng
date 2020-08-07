@@ -160,7 +160,7 @@ GEM
       rake
     fluent-logger (0.8.2)
       msgpack (>= 1.0.0, < 2)
-    fog-aliyun (0.3.17)
+    fog-aliyun (0.3.18)
       aliyun-sdk (~> 0.7.3)
       fog-core
       fog-json
