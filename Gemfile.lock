@@ -95,7 +95,7 @@ GEM
     beefcake (1.0.0)
     benchmark (0.1.0)
     bit-struct (0.16)
-    bits_service_client (3.4.0)
+    bits_service_client (4.0.0)
       activesupport
       statsd-ruby (~> 1.4.0)
       steno
@@ -514,7 +514,7 @@ DEPENDENCIES
   allowy (>= 2.1.0)
   awesome_print
   azure-storage (= 0.14.0.preview)
-  bits_service_client (~> 3.3, >= 3.3.0)
+  bits_service_client (~> 4.0)
   byebug
   cf-copilot (= 0.0.14)
   cf-perm (~> 0.0.10)
