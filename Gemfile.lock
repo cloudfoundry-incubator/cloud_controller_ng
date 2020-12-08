@@ -314,7 +314,7 @@ GEM
       ast (~> 2.4.1)
     pg (1.2.3)
     posix-spawn (0.3.15)
-    protobuf (3.6.12)
+    protobuf (3.10.3)
       activesupport (>= 3.2)
       middleware
       thor
@@ -481,7 +481,7 @@ GEM
     timecop (0.9.2)
     timeliness (0.3.10)
     to_regexp (0.2.1)
-    tzinfo (1.2.7)
+    tzinfo (1.2.8)
       thread_safe (~> 0.1)
     uber (0.1.0)
     unf (0.1.4)
@@ -557,7 +557,7 @@ DEPENDENCIES
   parallel_tests
   pg
   posix-spawn (~> 0.3.15)
-  protobuf (= 3.6.12)
+  protobuf (= 3.10.3)
   pry-byebug
   public_suffix
   rack-test
