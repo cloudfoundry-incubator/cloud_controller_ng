@@ -38,7 +38,7 @@ module SpaceRestrictedResponseGenerators
       'code' => 10003,
     }
 
-    Hash.new({code: 403, response_object: forbidden_response}).tap do |h|
+    Hash.new({ code: 403, response_object: forbidden_response }).tap do |h|
       permitted_roles.each do |role|
         h[role] = { code: success_code }
       end
@@ -58,7 +58,7 @@ module SpaceRestrictedResponseGenerators
       'code' => 10003,
     }
 
-    Hash.new({code: 403, response_object: forbidden_response}).tap do |h|
+    Hash.new({ code: 403, response_object: forbidden_response }).tap do |h|
       permitted_roles.each do |role|
         h[role] = { code: success_code }
       end
@@ -88,7 +88,7 @@ module SpaceRestrictedResponseGenerators
   end
 
   def responses_for_space_restricted_delete_endpoint(
-  permitted_roles: SpaceRestrictedResponseGenerators.default_permitted_roles
+    permitted_roles: SpaceRestrictedResponseGenerators.default_permitted_roles
     )
     Hash.new(code: 404).tap do |h|
       permitted_roles.each do |role|

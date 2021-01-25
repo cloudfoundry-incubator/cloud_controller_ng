@@ -2560,7 +2560,6 @@ RSpec.describe 'V3 service instances' do
         }
       }
 
-
       it_behaves_like 'permissions for delete endpoint', ALL_PERMISSIONS do
         let(:expected_codes_and_responses) do
           Hash.new(code: 403).tap do |h|
@@ -2573,9 +2572,8 @@ RSpec.describe 'V3 service instances' do
         end
       end
 
-
       it_behaves_like 'permissions for delete endpoint when organization is suspended', 204 do
-        let(:expected_codes) { }
+        let(:expected_codes) {}
       end
     end
 
